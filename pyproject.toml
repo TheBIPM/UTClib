@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "utclib"
+version = "0.1"
+description = "A library for time and frequency links manipulation"
+authors = [
+    {name = "Frédéric Meynadier", email = "Frederic.Meynadier@bipm.org"},
+    {name = "Giulio Tagliaferro", email = "Giulio.Tagliaferro@bipm.org"}
+] 
+readme = "Readme.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+]
+
+
+[project.urls]
+repository = "https://github.com/TheBIPM/UTClib"
+
+
+[project.scripts]
+tfexconv = "utclib.main:tfexconv"
+
+
