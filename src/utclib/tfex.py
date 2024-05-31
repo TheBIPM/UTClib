@@ -15,7 +15,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-import tomli
+import toml
+import numpy as np
+from tabarray import tabarray
+from taiseconds import taiseconds
+
+def parseFixedWithString(string,widths,types):
+    lst = [[]]*len(widths)
+    p = 0
+    for i in range(len(widths)):
+        if types[i] == 'd':
+            lst[i] = int(string[p:(p+widths[i])])
+            p += widths[i]
+        elif types[i] == 's':
+            lst[i] = string[p:(p+widths[i])]
+            p += widths[i]  
+        elif types[i] == 'f':
+            lst[i] = float(string[p:(p+widths[i])])
+            p += widths[i]  
+    return tuple(lst)
+        
 
 class tfex:
     """
@@ -41,6 +60,10 @@ class tfex:
         self.comments = []                     #  Comments
 
         # DATA
+        
+        self.flags  = []                           # List of poosible flags 
+        self.data   = None                         # the data itself
+        self.time_stamps = None                     # time stamp of the data lines [obj of taiseconds]
 
     @classmethod
     def from_file(self,file_path):
@@ -58,7 +81,9 @@ class tfex:
             while line and line[0] == '#':
                 header_lines = header_lines + line[1:] + '\n'
                 line = fp.readline()
-        header_data = tomli.loads(header_lines)
+            lines = fp.readlines();
+        lines.insert(0, line)
+        header_data = toml.loads(header_lines)
         
         if 'TFEXVER' in header_data:
             tfex_obj.version = header_data['TFEXVER']
@@ -101,10 +126,86 @@ class tfex:
         
         if 'COMMENT' in header_data:
             tfex_obj.comments = header_data['COMMENT']
+            
+        dtypes_data = []
+        dtypes_timetag = []
+        
+        widths = []
+        f_types= []
+        for col in tfex_obj.colums:
+            if 'timetag' not in col['type'] or 'secondary_timetag' in col['type']:
+                if 'd' in col['format']:
+                    dtypes_data.append(("{}_{}".format(col['id'], col['type']), 'int'))
+                    widths.append(int(col['format'][0:-1]))
+                    f_types.append('d')
+                elif 'f' in col['format']:
+                    dtypes_data.append(("{}_{}".format(col['id'], col['type']), 'float'))
+                    idxdec = col['format'].index('.')
+                    idxf = col['format'].index('f')
+                    widths.append(int(col['format'][0:min(idxdec,idxf)]))
+                    f_types.append('f')
+                elif 's' in col['format']:
+                    dtypes_data.append(("{}_{}".format(col['id'], col['type']), 'S'+col['format'][:-1]))
+                    widths.append(int(col['format'][0:-1]))
+                    f_types.append('s')
+                else:
+                    raise Exception("format {} not recognized, aborting file read".format(col['format'])) 
+            else:
+                if 'd' in col['format']:
+                    dtypes_timetag.append(("{}_{}".format(col['id'], col['type']), 'int'))
+                    widths.append(int(col['format'][0:-1]))
+                    f_types.append('d')
+                elif 'f' in col['format']:
+                    dtypes_timetag.append(("{}_{}".format(col['id'], col['type']), 'float'))
+                    idxdec = col['format'].index('.')
+                    idxf = col['format'].index('f')
+                    widths.append(int(col['format'][0:min(idxdec,idxf)]))
+                    f_types.append('f')
+                    
+        n_lines = len(lines)
+        tfex_obj.data =  tabarray(np.zeros((n_lines,), dtype=dtypes_data))
+        timetag = tabarray(np.zeros((n_lines,), dtype=dtypes_timetag))
+        n_ttc = len(dtypes_timetag); #number of  time tag colums
+        for i in range(len(lines)):
+            data = parseFixedWithString(lines[i],widths,f_types);
+            timetag[i] = data[0:n_ttc]
+            tfex_obj.data[i] = data[n_ttc:]
+        
+        ## TODO -> warningns in case of loss of precision for floats
+        
+        
+        ## TODO -> decide which timestamps are allowed in the format and manage them, for now just MJD and second of the day
+        mjds = np.zeros((n_lines,), np.double);
+        for i in range(len(dtypes_timetag)):
+            if 'timetag_MJD' in dtypes_timetag[i][0]:
+                mjds = mjds + timetag[:,i]
+            elif 'timetag_SoD' in dtypes_timetag[i][0]:
+                mjds = mjds + timetag[:,i].astype(np.float64)/86400
+        
+        tfex_obj.time_stamps = taiseconds.fromMJD(mjds)
         
         
         return tfex_obj
         
         
-    def write(seld,file_path):
+    def write(self,file_path):
+        header_data = {
+            "TFEXVER": self.version,
+            "MJDSTART": self.mjd_start,
+            "MJDSTOP": self.mjd_stop,
+            "NDATA": self.n_data,
+            "PREFIX": self.prefixes,
+            "SAMPLING_INTERVAL_s": self.sampling_interval_s,
+            "AVERAGING_WINDOW_s": self.averagion_window_s,
+            "MISSING_EPOCHS": self.missing_epochs,
+            "AUTHOR": self.author,
+            "DATE": self.date,
+            "REFPOINTS": self.refpoints,
+            "COLUMNS": self.colums,
+            "CONSTANT_DELAYS": self.constant_delays,
+            "COMMENT": self.comments
+            }
+        
+            
         return 0
+
