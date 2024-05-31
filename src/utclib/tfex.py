@@ -63,7 +63,7 @@ class tfex:
         
         self.flags  = []                           # List of poosible flags 
         self.data   = None                         # the data itself
-        self.time_stamps = None                     # time stamp of the data lines [obj of taiseconds]
+        self.time_stamps = None                    # time stamp of the data lines [obj of taiseconds]
 
     @classmethod
     def from_file(self,file_path):
@@ -188,7 +188,13 @@ class tfex:
         return tfex_obj
         
         
-    def write(self,file_path):
+    def write_to_file(self,file_path):
+        """write tfex object to file
+        Parameters
+        ----------
+        file_path : str
+            file path to which the tfex object is written
+        """
         header_data = {
             "TFEXVER": self.version,
             "MJDSTART": self.mjd_start,
@@ -205,6 +211,54 @@ class tfex:
             "CONSTANT_DELAYS": self.constant_delays,
             "COMMENT": self.comments
             }
+        
+        header_string = toml.dumps(header_data)  ### the style used by the toml dumps is not the nicest one, TODO beautify the header
+        header_string = header_string.replace('\n','\n#')
+        header_string = '#' + header_string
+        header_string = header_string[:-1]
+        
+        of = open(file_path, "w")
+        
+        
+        of.write(header_string)
+        
+        format_string_data = ""
+        format_string_timestamp = ""
+        dtypes_timetag = []
+        for col in self.colums:
+            if 'timetag' not in col['type'] or 'secondary_timetag' in col['type']:
+                format_string_data += "%" + col['format'] +""
+            else:
+                dtypes_timetag.append(("{}_{}".format(col['id'], col['type']), 'int'))
+                format_string_timestamp += "%" + col['format'] +""
+        format_string_data += "\n"
+        
+        time_stamp = tabarray(np.zeros((len(self.data),), dtype=dtypes_timetag))
+        (mjds,sod) = self.time_stamps.getIntMJDSOD();
+        for i in range(len(dtypes_timetag)):
+            if 'timetag_MJD' in dtypes_timetag[i][0]:
+                time_stamp[:,i] = mjds
+            elif 'timetag_SoD' in dtypes_timetag[i][0]:
+                time_stamp[:,i] = sod
+        data_string = ""
+        
+        #string field to be decoded
+        decode_index = []
+        for i in range(len(self.data.dtype)):
+            if self.data.dtype[i].type is np.string_:
+                decode_index.append(i)
+        
+        
+        for i in range(len(self.data)):
+            dataline = list(self.data[i])
+            for i in decode_index:
+                dataline[i] = dataline[i].decode() #otherwise it is formatted as b'....   
+            data_string += format_string_timestamp % tuple(time_stamp[i]) + format_string_data % tuple(dataline)
+        
+        of.write(data_string)
+        of.close()
+        
+        
         
             
         return 0
