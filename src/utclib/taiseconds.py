@@ -215,7 +215,7 @@ class taiseconds:
         tai_sec, cross_leap = self.removeLeapSecond()
         if cross_leap:
             print('WARNING: leap second crossed, causality could be compromised')
-        return float(tai_sec)/86400+float(self.tai_seconds[:,1])/1e16 + self.MJD_TAI0 
+        return tai_sec.astype(np.float64)/86400+(self.tai_seconds[:,1]/1e16).astype(np.float64)/86400 + self.MJD_TAI0 
 
     def getIntMJDSOD(self):
         """ get the MJD
