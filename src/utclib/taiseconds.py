@@ -34,35 +34,35 @@ class taiseconds:
         self.CAL_TAI0 = [1958, 1, 1, 0, 0, 0]
         self.DATETIME64_TAI0 = np.datetime64('1958-01-01')
         self.UNIX_TAI0 = -378691200    
-        # first colums in second elsapsed since TAI start epoch, second could is the number of non leap secons elapsed , third colum is TAI - UTC in seconds
-        self.LEAP_SEC_TAB = np.array( [[ 441763200,  441763190, 10]   # 1972   1    1 UTC 
-                                      ,[ 457488010,  457487999, 11]   # 1972   7    1 UTC 
-                                      ,[ 473385611,  473385599, 12]   # 1973   1    1 UTC 
-                                      ,[ 504921612,  504921599, 13]   # 1974   1    1 UTC 
-                                      ,[ 536457613,  536457599, 14]   # 1975   1    1 UTC 
-                                      ,[ 567993614,  567993599, 15]   # 1976   1    1 UTC 
-                                      ,[ 599616015,  599615999, 16]   # 1977   1    1 UTC 
-                                      ,[ 631152016,  631151999, 17]   # 1978   1    1 UTC 
-                                      ,[ 662688017,  662687999, 18]   # 1979   1    1 UTC 
-                                      ,[ 694224018,  694223999, 19]   # 1980   1    1 UTC 
-                                      ,[ 741484819,  741484799, 20]   # 1981   7    1 UTC 
-                                      ,[ 773020820,  773020799, 21]   # 1982   7    1 UTC 
-                                      ,[ 804556821,  804556799, 22]   # 1983   7    1 UTC 
-                                      ,[ 867715222,  867715199, 23]   # 1985   7    1 UTC 
-                                      ,[ 946684823,  946684799, 24]   # 1988   1    1 UTC 
-                                      ,[1009843224, 1009843199, 25]   # 1990   1    1 UTC 
-                                      ,[1041379225, 1041379199, 26]   # 1991   1    1 UTC 
-                                      ,[1088640026, 1088639999, 27]   # 1992   7    1 UTC 
-                                      ,[1120176027, 1120175999, 28]   # 1993   7    1 UTC 
-                                      ,[1151712028, 1151711999, 29]   # 1994   7    1 UTC 
-                                      ,[1199145629, 1199145599, 30]   # 1996   1    1 UTC 
-                                      ,[1246406430, 1246406399, 31]   # 1997   7    1 UTC 
-                                      ,[1293840031, 1293839999, 32]   # 1999   1    1 UTC 
-                                      ,[1514764832, 1514764799, 33]   # 2006   1    1 UTC 
-                                      ,[1609459233, 1609459199, 34]   # 2009   1    1 UTC 
-                                      ,[1719792034, 1719791999, 35]   # 2012   7    1 UTC 
-                                      ,[1814400035, 1814399999, 36]   # 2015   7    1 UTC 
-                                      ,[1861920036, 1861919999, 37]]) # 2017   1    1 UTC                                    
+        # first colums in second elsapsed since TAI start epoch, second could is the number of non leap secons elapsed , third colum is TAI - UTC in seconds after that date
+        self.LEAP_SEC_TAB = np.array( [[ 441763200, 10]   # 1972   1    1 UTC 
+                                      ,[ 457488011, 11]   # 1972   7    1 UTC 
+                                      ,[ 473385612, 12]   # 1973   1    1 UTC 
+                                      ,[ 504921613, 13]   # 1974   1    1 UTC 
+                                      ,[ 536457614, 14]   # 1975   1    1 UTC 
+                                      ,[ 567993615, 15]   # 1976   1    1 UTC 
+                                      ,[ 599616016, 16]   # 1977   1    1 UTC 
+                                      ,[ 631152017, 17]   # 1978   1    1 UTC 
+                                      ,[ 662688018, 18]   # 1979   1    1 UTC 
+                                      ,[ 694224019, 19]   # 1980   1    1 UTC 
+                                      ,[ 741484820, 20]   # 1981   7    1 UTC 
+                                      ,[ 773020821, 21]   # 1982   7    1 UTC 
+                                      ,[ 804556822, 22]   # 1983   7    1 UTC 
+                                      ,[ 867715223, 23]   # 1985   7    1 UTC 
+                                      ,[ 946684824, 24]   # 1988   1    1 UTC 
+                                      ,[1009843225, 25]   # 1990   1    1 UTC 
+                                      ,[1041379226, 26]   # 1991   1    1 UTC 
+                                      ,[1088640027, 27]   # 1992   7    1 UTC 
+                                      ,[1120176028, 28]   # 1993   7    1 UTC 
+                                      ,[1151712029, 29]   # 1994   7    1 UTC 
+                                      ,[1199145630, 30]   # 1996   1    1 UTC 
+                                      ,[1246406431, 31]   # 1997   7    1 UTC 
+                                      ,[1293840032, 32]   # 1999   1    1 UTC 
+                                      ,[1514764833, 33]   # 2006   1    1 UTC 
+                                      ,[1609459234, 34]   # 2009   1    1 UTC 
+                                      ,[1719792035, 35]   # 2012   7    1 UTC 
+                                      ,[1814400036, 36]   # 2015   7    1 UTC 
+                                      ,[1861920037, 37]]) # 2017   1    1 UTC                             
      
     @classmethod                                              
     def fromMJD(self,mjd):
@@ -91,7 +91,7 @@ class taiseconds:
         obj = self()
         obj.tai_seconds = np.zeros((len(unixsecond),2),np.int64)
         obj.tai_seconds[:,0] = np.floor(unixsecond - obj.UNIX_TAI0)
-        obj.tai_seconds[:,1] = np.round(np.remainder(unixsecond)*1e16)
+        obj.tai_seconds[:,1] = np.round(np.remainder(unixsecond,1)*1e16)
 
         obj.applyLeapSecond()
         return obj
@@ -115,7 +115,7 @@ class taiseconds:
         idx_not_leap = np.logical_not(idx_leap)
         seconds[idx_leap] -= 1
 
-        frac_seconds = np.remainder(seconds)
+        frac_seconds = np.remainder(seconds,1)
         seconds = np.floor(seconds)
 
         # convert ot numpy datatime64
@@ -125,14 +125,14 @@ class taiseconds:
         years = np.asarray(years) - 1970
         months = np.asarray(months) - 1
         days = np.asarray(days) - 1
-        types = ('<M8[Y]', '<m8[M]', '<m8[D]', '<m8[W]', '<m8[h]','<m8[m]', '<m8[s]', '<m8[ms]', '<m8[us]', '<m8[ns]')
-        vals = (years, months, days, weeks, hours, minutes, seconds, milliseconds, microseconds, nanoseconds)
+        types = ('<M8[Y]', '<m8[M]', '<m8[D]', '<m8[h]','<m8[m]', '<m8[s]', '<m8[ms]', '<m8[us]', '<m8[ns]')
+        vals = (years, months, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds)
         npdate = sum(np.asarray(v, dtype=t) for t, v in zip(types, vals) if v is not None)
 
 
 
         obj.tai_seconds = np.zeros((len(years),2),np.int64)
-        timedelta = npdate - self.DATETIME64_TAI0
+        timedelta = npdate - obj.DATETIME64_TAI0
         obj.tai_seconds[:,0] = timedelta.astype('timedelta64[s]').astype(np.int64)
         obj.tai_seconds[:,1] = np.round(frac_seconds*1e16)
 
@@ -151,19 +151,20 @@ class taiseconds:
         min_taisec = np.min(self.tai_seconds[:,0])
         max_taisec = np.max(self.tai_seconds[:,0])
 
-        if max_taisec < self.LEAP_SEC_TAB[0,1]:
+        leap_epoch_nls = self.LEAP_SEC_TAB[:,0] - self.LEAP_SEC_TAB[:,1] # leap second epoch in non leap second count
+        if max_taisec > leap_epoch_nls[0]:
             min_found = False
             for i in range(self.LEAP_SEC_TAB.shape[0]-1,-1,-1):
-                if self.LEAP_SEC_TAB[i,1] < min_taisec:
+                if leap_epoch_nls[i] < min_taisec:
                     if not(min_found):
                         min_found = True
                     else:
                         break
                 if i == (self.LEAP_SEC_TAB.shape[0]-1):
-                    self.tai_seconds[self.tai_seconds[:,0] > self.LEAP_SEC_TAB[i,1],0] += self.LEAP_SEC_TAB[i,2]
+                    self.tai_seconds[self.tai_seconds[:,0] >= leap_epoch_nls[i],0] += self.LEAP_SEC_TAB[i,1]
                 else:
-                    idx = np.logical_and(self.tai_seconds[:,0] > self.LEAP_SEC_TAB[i,1],self.tai_seconds[:,0] < self.LEAP_SEC_TAB[i+1,1])
-                    self.tai_seconds[idx,0] += self.LEAP_SEC_TAB[i,2]
+                    idx = np.logical_and(self.tai_seconds[:,0] >= leap_epoch_nls[i],self.tai_seconds[:,0] < leap_epoch_nls[i+1])
+                    self.tai_seconds[idx,0] += self.LEAP_SEC_TAB[i,1]
         else:
             if max_taisec > 0:
                 print("WARNING: UTC TAI difference between 1 1 1958 and 1 1 1972 still nto supported")   
@@ -174,7 +175,7 @@ class taiseconds:
         """
 
 
-        tai_sec = self.tai_seconds[:,0]
+        tai_sec = np.copy(self.tai_seconds[:,0])
         min_taisec = np.min(tai_sec)
         max_taisec = np.max(tai_sec)
 
@@ -184,12 +185,18 @@ class taiseconds:
             if self.LEAP_SEC_TAB[i,0] > max_taisec:
                     break
             if i == (self.LEAP_SEC_TAB.shape[0]-1):
-                tai_sec[tai_sec >= self.LEAP_SEC_TAB[i,0],0] -= self.LEAP_SEC_TAB[i,2]
+                tai_sec[tai_sec >= self.LEAP_SEC_TAB[i,0],0] -= self.LEAP_SEC_TAB[i,1]
                 count += 1
             else:
                 idx = np.logical_and(self.tai_seconds[:,0] >= self.LEAP_SEC_TAB[i,0],self.tai_seconds[:,0] < self.LEAP_SEC_TAB[i+1,0])
-                self.tai_seconds[idx,0] -= self.LEAP_SEC_TAB[i,2]
+                tai_sec[idx] -= self.LEAP_SEC_TAB[i,1]
                 count += 1
+        # leap second can not be represented in a non lap second scale 
+        # IMPORTANT 1 : this is critical for converting back to calendar time
+        # IMPORTANT 2 : this means that in unix time and MJD all leap second epochs are borught back to the previous second
+        is_leap = self.isLeapSec()
+        tai_sec[is_leap] -= 1 
+     
 
 
         return tai_sec, count > 1
@@ -241,12 +248,12 @@ class taiseconds:
         tai_sec, cross_leap = self.removeLeapSecond()
         if cross_leap and not(disable_warn):
             print('WARNING: leap second crossed, causality could be compromised')
-        return tai_sec + obj.UNIX_TAI0
+        return tai_sec + self.UNIX_TAI0
 
     def isLeapSec(self):
         " get leaps second index"
 
-        idx = np.full((self.tai_seconds.shape[0],1),False)
+        idx = np.full((self.tai_seconds.shape[0],),False)
         for i in range(1,self.LEAP_SEC_TAB.shape[0]):
             idx = np.logical_or(idx,self.tai_seconds[:,0] == (self.LEAP_SEC_TAB[i,0]-1))
         return idx
@@ -268,7 +275,15 @@ class taiseconds:
         is_leap = self.isLeapSec()
         unixsec = self.getUnixTimeInt(True)
         dt = np.array(unixsec, dtype='datetime64[s]')
-        years, months, days, hours, minutes, seconds = [dt.astype(f"M8[{x}]") for x in "YMDhms"]
+        # see https://stackoverflow.com/questions/13648774/get-year-month-or-day-from-numpy-datetime64
+        Y, M, D, h, m, s = [dt.astype(f"M8[{x}]") for x in "YMDhms"]
+        years = Y.astype(np.int64) + 1970
+        months = (M - Y).astype(np.int64) + 1 # month
+        days = (D - M).astype(np.int64) + 1 # day
+        hours = (dt - D).astype("m8[h]").astype(np.int64) # hour
+        minutes = (dt - h).astype("m8[m]").astype(np.int64) # minute
+        seconds = (dt - m).astype("m8[s]").astype(np.int64) # second
+        
         seconds = seconds + self.tai_seconds[:,1]/1e16
 
         seconds[is_leap] += 1
