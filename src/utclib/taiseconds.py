@@ -34,6 +34,7 @@ class taiseconds:
         self.CAL_TAI0 = [1958, 1, 1, 0, 0, 0]
         self.DATETIME64_TAI0 = np.datetime64('1958-01-01')
         self.UNIX_TAI0 = -378691200    
+        #self.TAISEC_GPS0 = 
         # first colums in second elsapsed since TAI start epoch, second could is the number of non leap secons elapsed , third colum is TAI - UTC in seconds after that date
         self.LEAP_SEC_TAB = np.array( [[ 441763200, 10]   # 1972   1    1 UTC 
                                       ,[ 457488011, 11]   # 1972   7    1 UTC 
@@ -105,11 +106,18 @@ class taiseconds:
         calendar : numpy array (nx)
             
         """
-        if years.shape[0] != months.shape[0] or years.shape[0] != days.shape[0] or years.shape[0] != hours.shape[0] or years.shape[0] != minutes.shape[0] or years.shape[0] != seconds.shape[0]:
-            print("ERROR: imput array do not have the same shape ")
-            return
-
+        if isinstance(years, np.ndarray) and isinstance(months, np.ndarray) and isinstance(days, np.ndarray) and isinstance(hours, np.ndarray) and isinstance(minutes, np.ndarray) and isinstance(seconds, np.ndarray):
+            if years.shape[0] != months.shape[0] or years.shape[0] != days.shape[0] or years.shape[0] != hours.shape[0] or years.shape[0] != minutes.shape[0] or years.shape[0] != seconds.shape[0]:
+                print("ERROR: imput array do not have the same shape ")
+                return
+        #else:
+        #    if type(years) != type(months) or type(years) != type(days) or type(years) != type(hours) or type(years) != type(minutes) or type(years) != type(seconds):
+        #        print("ERROR: imput array do not have the same type ")
+        #       return
+            
+        
         obj = self()
+        seconds = np.asarray(seconds)
 
         idx_leap = seconds >= 60
         idx_not_leap = np.logical_not(idx_leap)
@@ -131,7 +139,7 @@ class taiseconds:
 
 
 
-        obj.tai_seconds = np.zeros((len(years),2),np.int64)
+        obj.tai_seconds = np.zeros((years.size,2),np.int64)
         timedelta = npdate - obj.DATETIME64_TAI0
         obj.tai_seconds[:,0] = timedelta.astype('timedelta64[s]').astype(np.int64)
         obj.tai_seconds[:,1] = np.round(frac_seconds*1e16)
@@ -185,7 +193,7 @@ class taiseconds:
             if self.LEAP_SEC_TAB[i,0] > max_taisec:
                     break
             if i == (self.LEAP_SEC_TAB.shape[0]-1):
-                tai_sec[tai_sec >= self.LEAP_SEC_TAB[i,0],0] -= self.LEAP_SEC_TAB[i,1]
+                tai_sec[tai_sec >= self.LEAP_SEC_TAB[i,0]] -= self.LEAP_SEC_TAB[i,1]
                 count += 1
             else:
                 idx = np.logical_and(self.tai_seconds[:,0] >= self.LEAP_SEC_TAB[i,0],self.tai_seconds[:,0] < self.LEAP_SEC_TAB[i+1,0])
