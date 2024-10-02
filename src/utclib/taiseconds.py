@@ -24,46 +24,48 @@ class taiseconds:
     A class to store TAI timestamps unambigously and with high precision
 
     """
+    FRAC_MULTIPLIER = 1e16
+    MJD_TAI0 = 36204                      # MJD of 1st Jan 1958 00h 00m 00s   
+    CAL_TAI0 = [1958, 1, 1, 0, 0, 0]
+    DATETIME64_TAI0 = np.datetime64('1958-01-01')
+    UNIX_TAI0 = -378691200    
+    #self.TAISEC_GPS0 = 
+    # first colums in second elsapsed since TAI start epoch, second could is the number of non leap secons elapsed , third colum is TAI - UTC in seconds after that date
+    LEAP_SEC_TAB = np.array( [[ 441763200, 10]   # 1972   1    1 UTC 
+                             ,[ 457488011, 11]   # 1972   7    1 UTC 
+                             ,[ 473385612, 12]   # 1973   1    1 UTC 
+                             ,[ 504921613, 13]   # 1974   1    1 UTC 
+                             ,[ 536457614, 14]   # 1975   1    1 UTC 
+                             ,[ 567993615, 15]   # 1976   1    1 UTC 
+                             ,[ 599616016, 16]   # 1977   1    1 UTC 
+                             ,[ 631152017, 17]   # 1978   1    1 UTC 
+                             ,[ 662688018, 18]   # 1979   1    1 UTC 
+                             ,[ 694224019, 19]   # 1980   1    1 UTC 
+                             ,[ 741484820, 20]   # 1981   7    1 UTC 
+                             ,[ 773020821, 21]   # 1982   7    1 UTC 
+                             ,[ 804556822, 22]   # 1983   7    1 UTC 
+                             ,[ 867715223, 23]   # 1985   7    1 UTC 
+                             ,[ 946684824, 24]   # 1988   1    1 UTC 
+                             ,[1009843225, 25]   # 1990   1    1 UTC 
+                             ,[1041379226, 26]   # 1991   1    1 UTC 
+                             ,[1088640027, 27]   # 1992   7    1 UTC 
+                             ,[1120176028, 28]   # 1993   7    1 UTC 
+                             ,[1151712029, 29]   # 1994   7    1 UTC 
+                             ,[1199145630, 30]   # 1996   1    1 UTC 
+                             ,[1246406431, 31]   # 1997   7    1 UTC 
+                             ,[1293840032, 32]   # 1999   1    1 UTC 
+                             ,[1514764833, 33]   # 2006   1    1 UTC 
+                             ,[1609459234, 34]   # 2009   1    1 UTC 
+                             ,[1719792035, 35]   # 2012   7    1 UTC 
+                             ,[1814400036, 36]   # 2015   7    1 UTC 
+                             ,[1861920037, 37]]) # 2017   1    1 UTC    
     def __init__(self):
 
         # HEADER
         self.tai_seconds = None                    #  nx 2 numpy int64 array:
                                                    #  first colums seconds sinc TAI origin 
                                                    #  fractional part of the second in attoseconds 1e-18s
-        self.MJD_TAI0 = 36204                      # MJD of 1st Jan 1958 00h 00m 00s   
-        self.CAL_TAI0 = [1958, 1, 1, 0, 0, 0]
-        self.DATETIME64_TAI0 = np.datetime64('1958-01-01')
-        self.UNIX_TAI0 = -378691200    
-        #self.TAISEC_GPS0 = 
-        # first colums in second elsapsed since TAI start epoch, second could is the number of non leap secons elapsed , third colum is TAI - UTC in seconds after that date
-        self.LEAP_SEC_TAB = np.array( [[ 441763200, 10]   # 1972   1    1 UTC 
-                                      ,[ 457488011, 11]   # 1972   7    1 UTC 
-                                      ,[ 473385612, 12]   # 1973   1    1 UTC 
-                                      ,[ 504921613, 13]   # 1974   1    1 UTC 
-                                      ,[ 536457614, 14]   # 1975   1    1 UTC 
-                                      ,[ 567993615, 15]   # 1976   1    1 UTC 
-                                      ,[ 599616016, 16]   # 1977   1    1 UTC 
-                                      ,[ 631152017, 17]   # 1978   1    1 UTC 
-                                      ,[ 662688018, 18]   # 1979   1    1 UTC 
-                                      ,[ 694224019, 19]   # 1980   1    1 UTC 
-                                      ,[ 741484820, 20]   # 1981   7    1 UTC 
-                                      ,[ 773020821, 21]   # 1982   7    1 UTC 
-                                      ,[ 804556822, 22]   # 1983   7    1 UTC 
-                                      ,[ 867715223, 23]   # 1985   7    1 UTC 
-                                      ,[ 946684824, 24]   # 1988   1    1 UTC 
-                                      ,[1009843225, 25]   # 1990   1    1 UTC 
-                                      ,[1041379226, 26]   # 1991   1    1 UTC 
-                                      ,[1088640027, 27]   # 1992   7    1 UTC 
-                                      ,[1120176028, 28]   # 1993   7    1 UTC 
-                                      ,[1151712029, 29]   # 1994   7    1 UTC 
-                                      ,[1199145630, 30]   # 1996   1    1 UTC 
-                                      ,[1246406431, 31]   # 1997   7    1 UTC 
-                                      ,[1293840032, 32]   # 1999   1    1 UTC 
-                                      ,[1514764833, 33]   # 2006   1    1 UTC 
-                                      ,[1609459234, 34]   # 2009   1    1 UTC 
-                                      ,[1719792035, 35]   # 2012   7    1 UTC 
-                                      ,[1814400036, 36]   # 2015   7    1 UTC 
-                                      ,[1861920037, 37]]) # 2017   1    1 UTC                             
+                                 
      
     @classmethod                                              
     def fromMJD(self,mjd):
@@ -76,7 +78,7 @@ class taiseconds:
         obj = self()
         obj.tai_seconds = np.zeros((len(mjd),2),np.int64)
         obj.tai_seconds[:,0] = np.floor((mjd - obj.MJD_TAI0)*86400)
-        obj.tai_seconds[:,1] = np.round(np.remainder((mjd - obj.MJD_TAI0)*86400,1)*1e16)
+        obj.tai_seconds[:,1] = np.round(np.remainder((mjd - obj.MJD_TAI0)*86400,1)*self.FRAC_MULTIPLIER)
 
         obj.applyLeapSecond()
         return obj
@@ -92,7 +94,7 @@ class taiseconds:
         obj = self()
         obj.tai_seconds = np.zeros((len(unixsecond),2),np.int64)
         obj.tai_seconds[:,0] = np.floor(unixsecond - obj.UNIX_TAI0)
-        obj.tai_seconds[:,1] = np.round(np.remainder(unixsecond,1)*1e16)
+        obj.tai_seconds[:,1] = np.round(np.remainder(unixsecond,1)*self.FRAC_MULTIPLIER)
 
         obj.applyLeapSecond()
         return obj
@@ -142,7 +144,7 @@ class taiseconds:
         obj.tai_seconds = np.zeros((years.size,2),np.int64)
         timedelta = npdate - obj.DATETIME64_TAI0
         obj.tai_seconds[:,0] = timedelta.astype('timedelta64[s]').astype(np.int64)
-        obj.tai_seconds[:,1] = np.round(frac_seconds*1e16)
+        obj.tai_seconds[:,1] = np.round(frac_seconds*self.FRAC_MULTIPLIER)
 
 
 
@@ -150,6 +152,23 @@ class taiseconds:
 
         obj.tai_seconds[idx_leap,0] += 1
         return obj
+
+
+    def __getitem__(self, key):
+        """
+        this function allows the class to be index as an array. E.g. extraction 4 and 5 element of a taiseconds object (lest call it taisec) becomes taisec[[3,4]]
+        """
+        obj = taiseconds()
+        obj.tai_seconds = self.tai_seconds[key,:]
+        return obj
+
+
+    def __setitem__(self, key, value):
+        """
+        this function allows the class to be index as an array. E.g. substituing epoch 4 and 5 of of a taiseconds object (lest call it taisec) with an other taisecond object (lets call it taisec2) becomes taisec[[3,4]] = taisec
+        """
+        self.tai_seconds[key,:] = value.tai_seconds
+
 
     def applyLeapSecond(self):
         """
@@ -223,7 +242,7 @@ class taiseconds:
         tai_sec, cross_leap = self.removeLeapSecond()
         if cross_leap:
             print('WARNING: leap second crossed, causality could be compromised')
-        return tai_sec.astype(np.float64)/86400+(self.tai_seconds[:,1]/1e16).astype(np.float64)/86400 + self.MJD_TAI0 
+        return tai_sec.astype(np.float64)/86400+(self.tai_seconds[:,1]/self.FRAC_MULTIPLIER).astype(np.float64)/86400 + self.MJD_TAI0 
 
     def getIntMJDSOD(self):
         """ get the MJD
@@ -238,7 +257,7 @@ class taiseconds:
         tai_sec, cross_leap= self.removeLeapSecond()
         if cross_leap:
             print('WARNING: leap second crossed, causality could be compromised')
-        sod = np.int64(np.remainder(tai_sec,86400)) + np.int64(np.round(self.tai_seconds[:,1]/1e16))
+        sod = np.int64(np.remainder(tai_sec,86400)) + np.int64(np.round(self.tai_seconds[:,1]/self.FRAC_MULTIPLIER))
         mjd = np.int64(np.floor(tai_sec/86400)) +  self.MJD_TAI0 
         mjd[sod == 86400] += 1
         sod[sod == 86400] = 0
@@ -292,9 +311,135 @@ class taiseconds:
         minutes = (dt - h).astype("m8[m]").astype(np.int64) # minute
         seconds = (dt - m).astype("m8[s]").astype(np.int64) # second
         
-        seconds = seconds + self.tai_seconds[:,1]/1e16
+        seconds = seconds + self.tai_seconds[:,1]/self.FRAC_MULTIPLIER
 
         seconds[is_leap] += 1
 
         return years, months, days, hours, minutes, seconds 
+    
+    def getFromMinEpoch(self):
+        """
+        get difference from min epoch
+
+        Returns
+        -------
+        diff : numpy array of float with difference from the first epoch
+
+        """
+        
+        min_sec = np.min(self.tai_seconds[:,0])
+        return (self.tai_seconds[:,0]-min_sec) + self.tai_seconds[:,1]/self.FRAC_MULTIPLIER, min_sec
+    
+    def intersect(self,taisec2,rate=None):
+        """
+        intersect two taiseconds object retuning one with just the common epoch at the deidered rate
+        WARNING: this works only for object with reasonably regualrly spaced epochs and rate which are integer multiplier or fraction of a second
+        
+
+        Parameters
+        ----------
+        taisec2 : taiseconds object
+
+        Returns
+        -------
+        taisec : a taisecond object with just the common epoch
+        i1 : index of the first array of epochs
+        i2 : index of the second array of epochs
+
+        """
+        
+        floatep1,min_sec1 = self.getFromMinEpoch()
+        floatep2,min_sec2 = taisec2.getFromMinEpoch()
+        if floatep1.size == 1 :
+            rate1 = 1
+            si1 = 1
+        else:
+            si1 = np.argsort(floatep1)
+            rate1 = np.median(np.diff(floatep1))
+        if floatep2.size == 1 :
+            rate2 = 1
+            si2 = 1
+        else:
+            si2 = np.argsort(floatep2)
+            rate2 = np.median(np.diff(floatep2))
+        if rate== None:   
+            rate = np.min([rate1,rate2])/3
+            
+        else:
+            rate = rate/3
+        if np.spacing(floatep1[-1]) > rate or  np.spacing(floatep2[-1]) > rate:
+            print('WARNING: double precision not enough for the datset, possible incorrect result')
+        if min_sec1 < min_sec2:
+            floatep2 = floatep2 + (min_sec2 - min_sec1)
+        else:
+            floatep1 = floatep1 + (min_sec1 - min_sec2)
+        intep1 = np.round(floatep1/rate).astype(np.int64)
+        intep2 = np.round(floatep2/rate).astype(np.int64)
+        
+        intset, i1, i2 = np.intersect1d(intep1, intep2, return_indices=True)
+        
+        obj = taiseconds()
+        intset = intset*rate
+        intsec = np.floor(intset).astype(np.int64)
+        fracsec = np.round(np.remainder(intsec,1)*self.FRAC_MULTIPLIER).astype(np.int64)
+        obj.tai_seconds = np.zeros((fracsec.size,2),np.int64)
+        obj.tai_seconds[:,0] = intsec
+        obj.tai_seconds[:,1] = fracsec
+        return obj,si1[i1],si2[i2]
+        
+        
+    def union(self,taisec2,rate=None):
+        """
+        intersect two taiseconds object retuning one with just the merged epoch
+        WARNING: this works only for object with reasonably regualrly spaced epochs and rate which are integer multiplier or fraction of a second
+
+        Parameters
+        ----------
+        taisec2 : taiseconds object
+
+        Returns
+        -------
+        taisec : a taisecond object with just the common epoch
+
+        """
+        floatep1,min_sec1 = self.getFromMinEpoch()
+        floatep2,min_sec2 = taisec2.getFromMinEpoch()
+        if floatep1.size == 1 :
+            rate1 = 1
+            si1 = 1
+        else:
+            si1 = np.argsort(floatep1)
+            rate1 = np.median(np.diff(floatep1))
+        if floatep2.size == 1 :
+            rate2 = 1
+            si2 = 1
+        else:
+            si2 = np.argsort(floatep2)
+            rate2 = np.median(np.diff(floatep2))
+        if rate== None:   
+            rate = np.min([rate1,rate2])/3
+        else:
+            rate = rate/3
+        if np.spacing(floatep1[-1]) > rate or  np.spacing(floatep2[-1]) > rate:
+            print('WARNING: double precision not enough for the datset, possible incorrect result')
+        if min_sec1 < min_sec2:
+            floatep2 = floatep2 + (min_sec2 - min_sec1)
+        else:
+            floatep1 = floatep1 + (min_sec1 - min_sec2)
+        intep1 = np.round(floatep1/rate).astype(np.int64)
+        intep2 = np.round(floatep2/rate).astype(np.int64)
+        
+        unionset = np.union1d(intep1, intep2)
+        i1 = np.searchsorted(unionset,intep1)
+        i2 = np.searchsorted(unionset,intep2)
+        
+        obj = taiseconds()
+        unionset = unionset*rate
+        intsec = np.floor(unionset).astype(np.int64)
+        fracsec = np.round(np.remainder(unionset,1)*self.FRAC_MULTIPLIER).astype(np.int64)
+        obj.tai_seconds = np.zeros((fracsec.size,2),np.int64)
+        obj.tai_seconds[:,0] = intsec
+        obj.tai_seconds[:,1] = fracsec
+        return obj,i1[si1],i2[si2]
+        
         
