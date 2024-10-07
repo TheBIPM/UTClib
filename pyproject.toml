@@ -15,6 +15,7 @@ readme = "Readme.md"
 requires-python = ">=3.10"
 dependencies = [
     "numpy",
+    "pytest",
 ]
 
 
@@ -24,5 +25,10 @@ repository = "https://github.com/TheBIPM/UTClib"
 
 [project.scripts]
 tfexconv = "utclib.main:tfexconv"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
 
 
