@@ -31,7 +31,14 @@ class TestTaiSeconds:
                    "month += 1;"
                    "day += 1"),
             number=1)
+        t4 = timeit.timeit(
+            'np.array(dates, dtype="datetime64")',
+            setup=("import numpy as np;"
+                   "dates = ['2022-01-01' for i in range(1000)];"
+                   ),
+            number=1)
         print("\n")
         print("1000 datetime creation time    : {:.3f} ms".format(t1 * 1000))
         print("1000 x 1 taiseconds creation time : {:.3f} ms".format(t2 * 1000))
         print("1 x 1000 taiseconds creation time : {:.3f} ms".format(t3 * 1000))
+        print("1 x 1000 datetime64 creation time : {:.3f} ms".format(t4 * 1000))
