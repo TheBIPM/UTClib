@@ -33,7 +33,7 @@ class taiseconds:
     TAISEC_BDS0 = 1514764833
     TAISEC_GAL0 = 1313971219
     # first colums in second elsapsed since TAI start epoch, second could is the number of non leap secons elapsed , third colum is TAI - UTC in seconds after that date
-    LEAP_SEC_TAB = np.array( [[ 441763200, 10]   # 1972   1    1 UTC
+    LEAP_SEC_TAB = np.array( [[ 441763210, 10]   # 1972   1    1 UTC
                              ,[ 457488011, 11]   # 1972   7    1 UTC
                              ,[ 473385612, 12]   # 1973   1    1 UTC
                              ,[ 504921613, 13]   # 1974   1    1 UTC
@@ -161,7 +161,7 @@ class taiseconds:
         return obj
 
     @classmethod
-    def fromGPSWeekSod(self,week,sod):
+    def fromGPSWeekSow(self,week,sow):
         """ createthe object from a numpy array of MJDs
         Parameters
         ----------
@@ -171,17 +171,17 @@ class taiseconds:
         """
         obj = self()
         week = np.asarray(week)
-        sod = np.asarray(sod)
+        sow = np.asarray(sow)
         nep = week.size
 
         obj.tai_seconds = np.zeros((nep,2),np.int64)
-        obj.tai_seconds[:,0] = self.TAISEC_GPS0 + week.astype(np.int64)*86400*7 + np.floor(sod).astype(np.int64)
-        obj.tai_seconds[:,1] = (np.remainder(sod,1)*self.FRAC_MULTIPLIER).astype(np.int64)
+        obj.tai_seconds[:,0] = self.TAISEC_GPS0 + week.astype(np.int64)*86400*7 + np.floor(sow).astype(np.int64)
+        obj.tai_seconds[:,1] = (np.remainder(sow,1)*self.FRAC_MULTIPLIER).astype(np.int64)
 
         return obj
 
     @classmethod
-    def fromGALWeekSod(self,week,sod):
+    def fromGALWeekSow(self,week,sow):
         """ createthe object from a numpy array of MJDs
         Parameters
         ----------
@@ -191,17 +191,17 @@ class taiseconds:
         """
         obj = self()
         week = np.asarray(week)
-        sod = np.asarray(sod)
+        sow = np.asarray(sow)
         nep = week.size
 
         obj.tai_seconds = np.zeros((nep,2),np.int64)
-        obj.tai_seconds[:,0] = self.TAISEC_GAL0 + week.astype(np.int64)*86400*7 + np.floor(sod).astype(np.int64)
-        obj.tai_seconds[:,1] = (np.remainder(sod,1)*self.FRAC_MULTIPLIER).astype(np.int64)
+        obj.tai_seconds[:,0] = self.TAISEC_GAL0 + week.astype(np.int64)*86400*7 + np.floor(sow).astype(np.int64)
+        obj.tai_seconds[:,1] = (np.remainder(sow,1)*self.FRAC_MULTIPLIER).astype(np.int64)
 
         return obj
 
     @classmethod
-    def fromBDSWeekSod(self,week,sod):
+    def fromBDSWeekSow(self,week,sow):
         """ createthe object from a numpy array of MJDs
         Parameters
         ----------
@@ -211,12 +211,12 @@ class taiseconds:
         """
         obj = self()
         week = np.asarray(week)
-        sod = np.asarray(sod)
+        sow = np.asarray(sow)
         nep = week.size
 
         obj.tai_seconds = np.zeros((nep,2),np.int64)
-        obj.tai_seconds[:,0] = self.TAISEC_BDS0 + week.astype(np.int64)*86400*7 + np.floor(sod).astype(np.int64)
-        obj.tai_seconds[:,1] = (np.remainder(sod,1)*self.FRAC_MULTIPLIER).astype(np.int64)
+        obj.tai_seconds[:,0] = self.TAISEC_BDS0 + week.astype(np.int64)*86400*7 + np.floor(sow).astype(np.int64)
+        obj.tai_seconds[:,1] = (np.remainder(sow,1)*self.FRAC_MULTIPLIER).astype(np.int64)
 
         return obj
 
@@ -387,7 +387,7 @@ class taiseconds:
 
         return years, months, days, hours, minutes, seconds
 
-    def getGPSWeekSod(self):
+    def getGPSWeekSow(self):
         """ create the object from a numpy array of MJDs
         Returns
         ----------
@@ -398,11 +398,11 @@ class taiseconds:
         gpsec = self.tai_seconds[:,0] - self.TAISEC_GPS0
 
         week = np.floor(gpsec/(7*86400))
-        sod  = np.remainder(gpsec,(7*86400)) + self.tai_seconds[:,1]/self.FRAC_MULTIPLIER
+        sow  = np.remainder(gpsec,(7*86400)) + self.tai_seconds[:,1]/self.FRAC_MULTIPLIER
 
-        return week,sod
+        return week,sow
 
-    def getBDSWeekSod(self):
+    def getBDSWeekSow(self):
         """ create the object from a numpy array of MJDs
         Returns
         ----------
@@ -413,11 +413,11 @@ class taiseconds:
         bdsec = self.tai_seconds[:,0] - self.TAISEC_BDS0
 
         week = np.floor(bdsec/(7*86400))
-        sod  = np.remainder(bdsec,(7*86400)) + self.tai_seconds[:,1]/self.FRAC_MULTIPLIER
+        sow  = np.remainder(bdsec,(7*86400)) + self.tai_seconds[:,1]/self.FRAC_MULTIPLIER
 
-        return week,sod
+        return week,sow
 
-    def getGALWeekSod(self):
+    def getGALWeekSow(self):
         """ create the object from a numpy array of MJDs
         Returns
         ----------
@@ -428,9 +428,9 @@ class taiseconds:
         gasec = self.tai_seconds[:,0] - self.TAISEC_GAL0
 
         week = np.floor(gasec/(7*86400))
-        sod  = np.remainder(gasec,(7*86400)) + self.tai_seconds[:,1]/self.FRAC_MULTIPLIER
+        sow  = np.remainder(gasec,(7*86400)) + self.tai_seconds[:,1]/self.FRAC_MULTIPLIER
 
-        return week,sod
+        return week,sow
 
     def getFromMinEpoch(self):
         """
