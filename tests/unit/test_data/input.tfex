@@ -1,0 +1,42 @@
+# TFEXVER= 0.2
+# MJDSTART= 60250 
+# MJDSTOP= 60310 
+# NDATA = 1511 
+# PREFIX = {si = 'https://si-digital-framework.org/SI/units/'} 
+# SAMPLING_INTERVAL_s = 7200 
+# AVERAGING_WINDOW_s = 120 
+# MISSING_EPOCHS = false 
+# AUTHOR = "BIPM"
+# DATE = "2024-03-18T16:32:00.432Z"
+# REFPOINTS = [{id = 'A', ts = "UTC(NICT)", dev = "NICT01", type = "TW"},
+#              {id = 'B',  ts = "UTC(PTB)",  dev = "PTB05",  type = "TW"},
+#              {id = 'C',  ts = "UTC(PTB)",  dev = "PT13",   type = "GNSS"},
+#              {id = 'D',  ts = "UTC(NICT)", dev = "NC5S",   type = "GNSS"},
+#              {id = 'E',  ts =  "UTC(NICT)", type ="REFPOINT"}]
+# COLUMNS = [
+# {id = 1, type = "timetag_MJD", scale="gpstime", unit = "si:day", format = "5d"},
+# {id = 2, type = "timetag_SoD", scale="gpstime", unit = "si:second", format = "6d"},
+# {id = 9, type = "secondary_timetag_year", scale="utc", format = "04d"},
+# {id = 10, type = "secondary_timetag_month", scale="utc", format = "02d"},
+# {id = 11, type = "secondary_timetag_year", scale="utc", format = "02d"},
+# {id = 12, type = "secondary_timetag_yyyymmddhhmmss", scale="utc", format = "14d"},
+# {id = 3, type = "delta_t", trip = ['AB', 'CE'], unit = "si:nanosecond",format = "7.3f"},
+# {id = 4, type = "delta_f", trip = ['AB'], unit = "si:hertz",format = "7.3f"},
+# {id = 5, type = "unc", colref=3, unit = "si:ns",format = "7.3f"},
+# {id = 6, type = "smoothed_vondrak_0.4", colref=3, unit = "si:ns",format = "7.3f"},
+# {id = 7, type = "flag", colref=3, format = "1s", possible_values = {'O' = "outlier", 'C' = 'phase_reset'}},
+# {id = 8, type = "flag", colref=4, format = "1s", possible_values = {'O' = "original", 'C' = 'corrected'}},
+# {id = 13, type = "comment", format='256s'}
+# ]
+# CONSTANT_DELAYS = [
+#  {trip = ['ED'], unit = "si:nanosecond", value = 102.7, type = "TOTDLY"}
+# ]
+# 
+# COMMENT = """
+# kfmldlskmfk s
+# """
+
+60250 0000.000 -595.187
+60250    5.000 -595.271
+60250   10.000 -595.531
+60250   15.000      nan

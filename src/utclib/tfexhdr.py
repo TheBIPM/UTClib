@@ -25,14 +25,28 @@ class tfexhdr:
             'AUTHOR': str,
             'DATE':str,
             'REFPOINTS': list,
-            'COLUMNS': dict,
+            'COLUMNS': list,
             'CONSTANT_DELAYS': list,
             'COMMENT': str}
         # This turns each keyword into an attribute of the class
         for kw in self.valid_keywords_and_types.keys():
             setattr(self, kw, None)
 
-    def load(self, toml_string: str):
+    def read(self, filepath: str):
+        """ Read header from a tfex file
+        """
+        with open(filepath) as fp:
+            buf = []
+            for line in fp:
+                if line[0] != "#":
+                    # Header stops at first line with not starting with "#"
+                    break
+                # Remove trailing '#' and removes spaces
+                buf.append(line.replace('#', '').strip())
+        toml_string = "\n".join(buf)
+        self.loads(toml_string)
+
+    def loads(self, toml_string: str):
         """ Loads values from an input string that is valid TOML
         """
         parsed_toml = toml.loads(toml_string)
