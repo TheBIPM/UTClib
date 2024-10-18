@@ -60,6 +60,16 @@ class tfexhdr:
             except (TypeError, ValueError):
                 raise TfexHdrError("Wrong type for %s" % kw)
 
+    def write(self):
+        """ return a string containing gfile header (with trailing #s)
+        """
+        hdr_lines = []
+        for kw in self.valid_keywords_and_types.keys():
+            val = getattr(self, kw)
+            if val is not None:
+                hdr_lines.append("# {}: {}".format(kw, val))
+        return "\n".join(hdr_lines)
+
 
 
 if __name__ == "__main__":
