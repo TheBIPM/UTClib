@@ -14,19 +14,9 @@
 #              {id = 'D',  ts = "UTC(NICT)", dev = "NC5S",   type = "GNSS"},
 #              {id = 'E',  ts =  "UTC(NICT)", type ="REFPOINT"}]
 # COLUMNS = [
-# {id = 1, type = "timetag_MJD", scale="gpstime", unit = "si:day", format = "5d"},
-# {id = 2, type = "timetag_SoD", scale="gpstime", unit = "si:second", format = "6d"},
-# {id = 9, type = "secondary_timetag_year", scale="utc", format = "04d"},
-# {id = 10, type = "secondary_timetag_month", scale="utc", format = "02d"},
-# {id = 11, type = "secondary_timetag_year", scale="utc", format = "02d"},
-# {id = 12, type = "secondary_timetag_yyyymmddhhmmss", scale="utc", format = "14d"},
-# {id = 3, type = "delta_t", trip = ['AB', 'CE'], unit = "si:nanosecond",format = "7.3f"},
-# {id = 4, type = "delta_f", trip = ['AB'], unit = "si:hertz",format = "7.3f"},
-# {id = 5, type = "unc", colref=3, unit = "si:ns",format = "7.3f"},
-# {id = 6, type = "smoothed_vondrak_0.4", colref=3, unit = "si:ns",format = "7.3f"},
-# {id = 7, type = "flag", colref=3, format = "1s", possible_values = {'O' = "outlier", 'C' = 'phase_reset'}},
-# {id = 8, type = "flag", colref=4, format = "1s", possible_values = {'O' = "original", 'C' = 'corrected'}},
-# {id = 13, type = "comment", format='256s'}
+# {id = 1, label = "timetag_MJD", scale="gpstime", unit = "si:day", format = "5d"},
+# {id = 2, label = "timetag_SoD", scale="gpstime", unit = "si:second", format = "8.3f"},
+# {id = 3, label = "delta_t", trip = ['AB', 'CE'], unit = "si:nanosecond",format = "8.3f"},
 # ]
 # CONSTANT_DELAYS = [
 #  {trip = ['ED'], unit = "si:nanosecond", value = 102.7, type = "TOTDLY"}
