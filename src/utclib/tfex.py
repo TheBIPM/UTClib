@@ -19,6 +19,8 @@ import logging
 import numpy as np
 from operator import itemgetter
 import re
+import pandas as pd
+
 from utclib.tabarray import tabarray
 from utclib.taiseconds import taiseconds
 import utclib.tfexhdr as tfexhdr
@@ -89,19 +91,19 @@ class tfex:
                     start, end = self.ranges[i]
                     try:
                         # take correct field, cast to type
-                        val = self.dtypes[i][1](line[start:end])
-                    except (TypeError, ValueError, IndexError):
-                        if line[start:end].strip() not in ["nan", "*"]:
-                            logging.error("Impossible to parse %s as %s" % (
-                                line[start:end], str(self.dtypes[i])))
+                        val = line[start:end]
+                    except IndexError:
                         val = np.nan
                     datacols[i].append(val)
+        output = {}
         for i in range(len(self.dtypes)):
-            datacols[i] = np.array(datacols[i])
-        self.data = np.matrix(datacols, dtype=self.dtypes)
-        import ipdb;ipdb.set_trace()  # noqa
+            output[self.dtypes[i][0]] = self.dtypes[i][1](datacols[i])
+        self.data = pd.DataFrame(output)
 
-
+        # Timestamps : assume MJD / SoD for now
+        self.timestamps = taiseconds.fromMJDSoD(
+            self.data['timetag_MJD'].to_numpy(),
+            self.data['timetag_SoD'].to_numpy())
 
 
     def write_to_file(self,file_path):
@@ -111,71 +113,43 @@ class tfex:
         file_path : str
             file path to which the tfex object is written
         """
-        header_data = {
-            "TFEXVER": self.version,
-            "MJDSTART": self.mjd_start,
-            "MJDSTOP": self.mjd_stop,
-            "NDATA": self.n_data,
-            "PREFIX": self.prefixes,
-            "SAMPLING_INTERVAL_s": self.sampling_interval_s,
-            "AVERAGING_WINDOW_s": self.averagion_window_s,
-            "MISSING_EPOCHS": self.missing_epochs,
-            "AUTHOR": self.author,
-            "DATE": self.date,
-            "REFPOINTS": self.refpoints,
-            "COLUMNS": self.colums,
-            "CONSTANT_DELAYS": self.constant_delays,
-            "COMMENT": self.comments
-            }
 
-        header_string = toml.dumps(header_data)  ### the style used by the toml dumps is not the nicest one, TODO beautify the header
-        header_string = header_string.replace('\n','\n#')
-        header_string = '#' + header_string
-        header_string = header_string[:-1]
+        with open(file_path, "w") as fp:
+            fp.write(self.hdr.write())
 
-        of = open(file_path, "w")
+            format_string_data = ""
+            format_string_timestamp = ""
+            dtypes_timetag = []
+            for col in self.colums:
+                if 'timetag' not in col['type'] or 'secondary_timetag' in col['type']:
+                    format_string_data += "%" + col['format'] +""
+                else:
+                    dtypes_timetag.append(("{}_{}".format(col['id'], col['type']), 'int'))
+                    format_string_timestamp += "%" + col['format'] +""
+            format_string_data += "\n"
 
+            time_stamp = tabarray(np.zeros((len(self.data),), dtype=dtypes_timetag))
+            (mjds,sod) = self.time_stamps.getIntMJDSOD();
+            for i in range(len(dtypes_timetag)):
+                if 'timetag_MJD' in dtypes_timetag[i][0]:
+                    time_stamp[:,i] = mjds
+                elif 'timetag_SoD' in dtypes_timetag[i][0]:
+                    time_stamp[:,i] = sod
+            data_string = ""
 
-        of.write(header_string)
-
-        format_string_data = ""
-        format_string_timestamp = ""
-        dtypes_timetag = []
-        for col in self.colums:
-            if 'timetag' not in col['type'] or 'secondary_timetag' in col['type']:
-                format_string_data += "%" + col['format'] +""
-            else:
-                dtypes_timetag.append(("{}_{}".format(col['id'], col['type']), 'int'))
-                format_string_timestamp += "%" + col['format'] +""
-        format_string_data += "\n"
-
-        time_stamp = tabarray(np.zeros((len(self.data),), dtype=dtypes_timetag))
-        (mjds,sod) = self.time_stamps.getIntMJDSOD();
-        for i in range(len(dtypes_timetag)):
-            if 'timetag_MJD' in dtypes_timetag[i][0]:
-                time_stamp[:,i] = mjds
-            elif 'timetag_SoD' in dtypes_timetag[i][0]:
-                time_stamp[:,i] = sod
-        data_string = ""
-
-        #string field to be decoded
-        decode_index = []
-        for i in range(len(self.data.dtype)):
-            if self.data.dtype[i].type is np.string_:
-                decode_index.append(i)
+            #string field to be decoded
+            decode_index = []
+            for i in range(len(self.data.dtype)):
+                if self.data.dtype[i].type is np.string_:
+                    decode_index.append(i)
 
 
-        for i in range(len(self.data)):
-            dataline = list(self.data[i])
-            for i in decode_index:
-                dataline[i] = dataline[i].decode() #otherwise it is formatted as b'....
-            data_string += format_string_timestamp % tuple(time_stamp[i]) + format_string_data % tuple(dataline)
+            for i in range(len(self.data)):
+                dataline = list(self.data[i])
+                for i in decode_index:
+                    dataline[i] = dataline[i].decode() #otherwise it is formatted as b'....
+                data_string += format_string_timestamp % tuple(time_stamp[i]) + format_string_data % tuple(dataline)
 
-        of.write(data_string)
-        of.close()
-
-
-
-
-        return 0
+            of.write(data_string)
+            of.close()
 

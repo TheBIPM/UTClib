@@ -86,6 +86,23 @@ class taiseconds:
         return obj
 
     @classmethod
+    def fromMJDSoD(self, mjd, sod):
+        """ create the object from a numpy array of MJDs + numpy array of Sod
+        Parameters
+        ----------
+        mjd : numpy array (nx1)  MJDS
+        sod : numpy array (nx1)  Second of days
+
+        """
+        obj = self()
+        obj.tai_seconds = np.zeros((len(mjd),2),np.int64)
+        obj.tai_seconds[:,0] = np.floor((mjd - obj.MJD_TAI0)*86400)
+        obj.tai_seconds[:,1] = np.round(sod*self.FRAC_MULTIPLIER)
+
+        obj.applyLeapSecond()
+        return obj
+
+    @classmethod
     def fromUnixTime(self,unixsecond):
         """ createthe object from a numpy array of unix time
         Parameters
