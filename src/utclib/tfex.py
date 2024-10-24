@@ -19,10 +19,10 @@ import logging
 import numpy as np
 from operator import itemgetter
 import re
-import pandas as pd
 
 from utclib.tabarray import tabarray
 from utclib.taiseconds import taiseconds
+from utclib.tabarray import tabarray
 import utclib.tfexhdr as tfexhdr
 
 
@@ -63,6 +63,7 @@ class tfex:
             self.ranges.append([start, start + int(m["width"])])
             start += int(m["width"]) + 1
 
+    @classmethod
     def from_file(self,file_path):
         """create tfex object from file
         Parameters
@@ -70,12 +71,13 @@ class tfex:
         file_path : str
             file path of the tfex file
         """
+        tfex_obj = self()
         # First load header and parse the description of the columns
-        self.hdr.read(file_path)
-        self.parse_dtypes()
+        tfex_obj.hdr.read(file_path)
+        tfex_obj.parse_dtypes()
         # Now parse the data itself
         datacols = []
-        for i in range(len(self.dtypes)):
+        for i in range(len(tfex_obj.dtypes)):
             datacols.append([])
         with open(file_path) as fp:
             linenum = 0
@@ -83,27 +85,31 @@ class tfex:
                 linenum += 1
                 if line[0] == "#":
                     continue
-                if len(line) < self.ranges[-1][-1]:
+                if len(line) < tfex_obj.ranges[-1][-1]:
                     logging.warning("Line %d incomplete, skipping" % linenum)
                     continue
                 # scan all values and store in separate lists
-                for i in range(len(self.dtypes)):
-                    start, end = self.ranges[i]
+                for i in range(len(tfex_obj.dtypes)):
+                    start, end = tfex_obj.ranges[i]
                     try:
-                        # take correct field, cast to type
+                        # take correct field, don't cast yet
                         val = line[start:end]
                     except IndexError:
                         val = np.nan
                     datacols[i].append(val)
-        output = {}
-        for i in range(len(self.dtypes)):
-            output[self.dtypes[i][0]] = self.dtypes[i][1](datacols[i])
-        self.data = pd.DataFrame(output)
 
-        # Timestamps : assume MJD / SoD for now
-        self.timestamps = taiseconds.fromMJDSoD(
-            self.data['timetag_MJD'].to_numpy(),
-            self.data['timetag_SoD'].to_numpy())
+        # Allocate data array
+        tfex_obj.data = tabarray(np.zeros((len(datacols[0]), ),
+                                          dtype=tfex_obj.dtypes))
+        # Fill data array, cast vectors
+        for i in range(len(tfex_obj.dtypes)):
+            tfex_obj.data[:, i] = tfex_obj.dtypes[i][1](datacols[i])
+
+        # Timestamps : assume MJD / SoD input for now
+        tfex_obj.timestamps = taiseconds.fromMJDSoD(
+            tfex_obj.data['timetag_MJD'],
+            tfex_obj.data['timetag_SoD'])
+        return self
 
 
     def write_to_file(self,file_path):
