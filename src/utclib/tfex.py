@@ -17,7 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import logging
 import numpy as np
-from operator import itemgetter
 import re
 
 from utclib.tabarray import tabarray
@@ -114,7 +113,8 @@ class tfex:
                                           dtype=dtypes_data))
         timetags = tabarray(np.empty((len(raw_cols[0]), ),
                                       dtype=dtypes_timetags))
-        # Fill data array, cast vectors
+        # Fill data and timetags arrays, cast vectors
+        # col = number of the column in raw_cols, i = number in category
         for i, col in enumerate(tfex_obj.data_cols):
             tfex_obj.data[:, i] = tfex_obj.dtypes[col][1](raw_cols[col])
         for i, col in enumerate(tfex_obj.ttag_cols):
@@ -135,47 +135,27 @@ class tfex:
             file path to which the tfex object is written
         """
 
+        raw_cols = []
+        # For now only support mjd/sod
+        mjds, sods = self.timestamps.getIntMJDSOD()
+        # store formats
+        fmts = []
+        for col in self.hdr.COLUMNS:
+            if col['label'] == 'timetag_MJD':
+                raw_cols.append(mjds.tolist())
+            elif col['label'] == 'timetag_SoD':
+                raw_cols.append(sods.tolist())
+            else:
+                raw_cols.append(self.data[col['label']].tolist())
+            fmts.append("{:" + col['format'] + "} ")
+        data_output = []
+        for i in range(len(raw_cols[0])):
+            line = ""
+            for j, col in enumerate(self.dtypes):
+                line += fmts[j].format(raw_cols[j][i])
+            data_output.append(line)
+
+
         with open(file_path, "w") as fp:
             fp.write(self.hdr.write())
-
-            format_string_data = ""
-            format_string_timestamp = ""
-            dtypes_timetag = []
-            import ipdb;ipdb.set_trace()  # noqa
-            datacols = []
-            for col in self.hdr.COLUMNS:
-                if 'timetag' in col['label']:
-                    if col['label'] == ['timetag_MJD']:
-                        datacols.append()
-
-                if 'timetag' not in col['type'] or 'secondary_timetag' in col['type']:
-                    format_string_data += "%" + col['format'] +""
-                else:
-                    dtypes_timetag.append(("{}_{}".format(col['id'], col['type']), 'int'))
-                    format_string_timestamp += "%" + col['format'] +""
-            format_string_data += "\n"
-
-            time_stamp = tabarray(np.zeros((len(self.data),), dtype=dtypes_timetag))
-            (mjds,sod) = self.time_stamps.getIntMJDSOD()
-            for i in range(len(dtypes_timetag)):
-                if 'timetag_MJD' in dtypes_timetag[i][0]:
-                    time_stamp[:,i] = mjds
-                elif 'timetag_SoD' in dtypes_timetag[i][0]:
-                    time_stamp[:,i] = sod
-            data_string = ""
-
-            #string field to be decoded
-            decode_index = []
-            for i in range(len(self.data.dtype)):
-                if self.data.dtype[i].type is np.string_:
-                    decode_index.append(i)
-
-
-            for i in range(len(self.data)):
-                dataline = list(self.data[i])
-                for i in decode_index:
-                    dataline[i] = dataline[i].decode() #otherwise it is formatted as b'....
-                data_string += format_string_timestamp % tuple(time_stamp[i]) + format_string_data % tuple(dataline)
-
-            fp.write(data_string)
-
+            fp.write("\n".join(data_output))
