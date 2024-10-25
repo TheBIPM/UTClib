@@ -125,6 +125,46 @@ class tfex:
             timetags['timetag_SoD'])
         return tfex_obj
 
+    @classmethod
+    def from_arrays(self, input_data: list):
+        """create tfex object from existing numpy arrays
+        Parameters
+        ----------
+        input_data : list of (np.array, metadata)
+            a numpy list containing arrays and their metadata (COLUMNS dict
+            content)
+        """
+        tfex_obj = self()
+        ndata = len(input_data[0][0])
+        tfex_obj.hdr.COLUMNS = []
+        for arr, metadata in input_data:
+            tfex_obj.hdr.COLUMNS.append(metadata)
+            if len(arr) != ndata:
+                logging.error("Input arrays should have the same size")
+                raise SystemExit
+        tfex_obj.parse_dtypes()
+
+        # Separate timetags from data
+        dtypes_data = [tfex_obj.dtypes[i] for i in tfex_obj.data_cols]
+        dtypes_timetags = [tfex_obj.dtypes[i] for i in tfex_obj.ttag_cols]
+
+        # Allocate data arrays
+        tfex_obj.data = tabarray(np.empty((ndata, ), dtype=dtypes_data))
+        timetags = tabarray(np.empty((ndata, ), dtype=dtypes_timetags))
+        # Fill data and timetags arrays, cast vectors
+        # col = number in input_data, i = number in category
+        for i, col in enumerate(tfex_obj.data_cols):
+            tfex_obj.data[:, i] = tfex_obj.dtypes[col][1](input_data[col][0])
+        for i, col in enumerate(tfex_obj.ttag_cols):
+            timetags[:, i] = tfex_obj.dtypes[col][1](input_data[col][0])
+
+        import ipdb;ipdb.set_trace()  # noqa
+        # Timestamps : assume MJD / SoD input for now
+        tfex_obj.timestamps = taiseconds.fromMJDSoD(
+            timetags['timetag_MJD'],
+            timetags['timetag_SoD'])
+        return tfex_obj
+
 
     def write_to_file(self,file_path):
         """write tfex object to file
@@ -155,5 +195,6 @@ class tfex:
 
         # Write to output
         with open(file_path, "w") as fp:
-            fp.write(self.hdr.write())
+            fp.write(self.hdr.write() + "\n")
             fp.write("\n".join(data_output))
+

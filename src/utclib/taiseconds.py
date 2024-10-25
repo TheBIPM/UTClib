@@ -96,8 +96,9 @@ class taiseconds:
         """
         obj = self()
         obj.tai_seconds = np.zeros((len(mjd),2),np.int64)
-        obj.tai_seconds[:,0] = np.floor((mjd - obj.MJD_TAI0)*86400)
-        obj.tai_seconds[:,1] = np.round(sod*self.FRAC_MULTIPLIER)
+        obj.tai_seconds[:,0] = (np.floor((mjd - obj.MJD_TAI0)*86400) +
+                                np.floor(sod))
+        obj.tai_seconds[:,1] = np.round((sod%1)*self.FRAC_MULTIPLIER)
 
         obj.applyLeapSecond()
         return obj
