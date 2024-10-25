@@ -22,7 +22,6 @@ import re
 
 from utclib.tabarray import tabarray
 from utclib.taiseconds import taiseconds
-from utclib.tabarray import tabarray
 import utclib.tfexhdr as tfexhdr
 
 
@@ -39,13 +38,16 @@ class tfex:
     """
     def __init__(self):
         self.hdr = tfexhdr.tfexhdr()
-        # DATA
-        self.flags  = []        # List of poosible flags
-        self.data   = None      # the data itself
-        self.timestamps = None # time stamp of the data lines [obj of taiseconds]
-        self.dtypes = []
+        # Content
+        self.flags  = []        # List of possible flags
+        self.data   = None      # tabarray object containing the data
+        self.timestamps = None  # time stamp of the data lines [obj of taiseconds]
+        self.dtypes = []        # dtypes for each columns
         # List of [start, end] couples for fixed format reading/writing
         self.ranges = []
+        # List of columns indexes containing data (resp. timetags)
+        self.data_cols = []
+        self.ttag_cols = []
 
     def parse_dtypes(self):
         """ extract info from the COLUMNS header
@@ -55,13 +57,18 @@ class tfex:
         except AttributeError:
             logging.error("No COLUMNS found in header")
         start = 0
-        for c in sorted(col, key=itemgetter("id")):
+        for i, c in enumerate(col):
             # Extract relevant info from format string
             m = p.search(c["format"])
             self.dtypes.append((c['label'], type_conv[m["type"]]))
             # update list of ranges for data reading
             self.ranges.append([start, start + int(m["width"])])
             start += int(m["width"]) + 1
+            if 'timetag' in c["label"]:
+                self.ttag_cols.append(i)
+            else:
+                self.data_cols.append(i)
+
 
     @classmethod
     def from_file(self,file_path):
@@ -76,9 +83,9 @@ class tfex:
         tfex_obj.hdr.read(file_path)
         tfex_obj.parse_dtypes()
         # Now parse the data itself
-        datacols = []
-        for i in range(len(tfex_obj.dtypes)):
-            datacols.append([])
+        raw_cols = []
+        for col in tfex_obj.hdr.COLUMNS:
+            raw_cols.append([])
         with open(file_path) as fp:
             linenum = 0
             for line in fp:
@@ -96,20 +103,28 @@ class tfex:
                         val = line[start:end]
                     except IndexError:
                         val = np.nan
-                    datacols[i].append(val)
+                    raw_cols[i].append(val)
 
-        # Allocate data array
-        tfex_obj.data = tabarray(np.zeros((len(datacols[0]), ),
-                                          dtype=tfex_obj.dtypes))
+        # Separate timetags from data
+        dtypes_data = [tfex_obj.dtypes[i] for i in tfex_obj.data_cols]
+        dtypes_timetags = [tfex_obj.dtypes[i] for i in tfex_obj.ttag_cols]
+
+        # Allocate data arrays
+        tfex_obj.data = tabarray(np.empty((len(raw_cols[0]), ),
+                                          dtype=dtypes_data))
+        timetags = tabarray(np.empty((len(raw_cols[0]), ),
+                                      dtype=dtypes_timetags))
         # Fill data array, cast vectors
-        for i in range(len(tfex_obj.dtypes)):
-            tfex_obj.data[:, i] = tfex_obj.dtypes[i][1](datacols[i])
+        for i, col in enumerate(tfex_obj.data_cols):
+            tfex_obj.data[:, i] = tfex_obj.dtypes[col][1](raw_cols[col])
+        for i, col in enumerate(tfex_obj.ttag_cols):
+            timetags[:, i] = tfex_obj.dtypes[col][1](raw_cols[col])
 
         # Timestamps : assume MJD / SoD input for now
         tfex_obj.timestamps = taiseconds.fromMJDSoD(
-            tfex_obj.data['timetag_MJD'],
-            tfex_obj.data['timetag_SoD'])
-        return self
+            timetags['timetag_MJD'],
+            timetags['timetag_SoD'])
+        return tfex_obj
 
 
     def write_to_file(self,file_path):
@@ -126,7 +141,13 @@ class tfex:
             format_string_data = ""
             format_string_timestamp = ""
             dtypes_timetag = []
-            for col in self.colums:
+            import ipdb;ipdb.set_trace()  # noqa
+            datacols = []
+            for col in self.hdr.COLUMNS:
+                if 'timetag' in col['label']:
+                    if col['label'] == ['timetag_MJD']:
+                        datacols.append()
+
                 if 'timetag' not in col['type'] or 'secondary_timetag' in col['type']:
                     format_string_data += "%" + col['format'] +""
                 else:
@@ -135,7 +156,7 @@ class tfex:
             format_string_data += "\n"
 
             time_stamp = tabarray(np.zeros((len(self.data),), dtype=dtypes_timetag))
-            (mjds,sod) = self.time_stamps.getIntMJDSOD();
+            (mjds,sod) = self.time_stamps.getIntMJDSOD()
             for i in range(len(dtypes_timetag)):
                 if 'timetag_MJD' in dtypes_timetag[i][0]:
                     time_stamp[:,i] = mjds
@@ -156,6 +177,5 @@ class tfex:
                     dataline[i] = dataline[i].decode() #otherwise it is formatted as b'....
                 data_string += format_string_timestamp % tuple(time_stamp[i]) + format_string_data % tuple(dataline)
 
-            of.write(data_string)
-            of.close()
+            fp.write(data_string)
 
