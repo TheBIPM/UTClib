@@ -66,7 +66,14 @@ class tfexhdr:
         hdr_lines = []
         for kw in self.valid_keywords_and_types.keys():
             val = getattr(self, kw)
-            if val is not None:
+            if val is None:
+                continue
+            if isinstance(val, list):
+                hdr_lines.append("# {}: [".format(kw))
+                for v in val:
+                    hdr_lines.append("#   {},".format(repr(v)))
+                hdr_lines.append("# ]")
+            else:
                 hdr_lines.append("# {}: {}".format(kw, val))
         return "\n".join(hdr_lines)
 
