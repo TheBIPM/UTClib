@@ -23,7 +23,6 @@ from utclib.tabarray import tabarray
 from utclib.taiseconds import taiseconds
 import utclib.tfexhdr as tfexhdr
 
-
 # Regex for parsing format string
 p = re.compile(r"(?P<fill>0?)(?P<width>\d+)\.?(?P<prec>\d*)(?P<type>[dfs])")
 type_conv = {"d": np.int32,
@@ -134,7 +133,6 @@ class tfex:
         file_path : str
             file path to which the tfex object is written
         """
-
         raw_cols = []
         # For now only support mjd/sod
         mjds, sods = self.timestamps.getIntMJDSOD()
@@ -155,7 +153,7 @@ class tfex:
                 line += fmts[j].format(raw_cols[j][i])
             data_output.append(line)
 
-
+        # Write to output
         with open(file_path, "w") as fp:
             fp.write(self.hdr.write())
             fp.write("\n".join(data_output))
