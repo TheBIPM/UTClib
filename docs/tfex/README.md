@@ -45,3 +45,31 @@ Optional:
 ### Data
 
 Data starts just after the header. Empty lines are ignored. The width of each column is set by the width in the "COLUMNS" header, the ordering is the same as in the list, columns are separated by a space character (0x20). Non-values are represented by the character "\*". Otherwise the representation of the value must be parsable using the format string provided in the COLUMNS header. 
+
+# Example of TFEX file generated from a TSOFT output
+
+```
+# TFEXVER = 0.2
+# PREFIX = {
+#   'si':'https://si-digital-framework.org/SI/units/',
+# }}
+# AUTHOR = BIPM
+# REFPOINTS = {
+#   'A':{'ts': 'Unknown', 'dev': 'OP3', 'type': 'GPSPPP'},
+#   'B':{'ts': 'Unknown', 'dev': 'PT3', 'type': 'GPSPPP'},
+# }}
+# COLUMNS = [
+#   {'label': 'timetag_MJD', 'scale': 'utc', 'unit': 'si:day', 'format': '5d'},
+#   {'label': 'timetag_SoD', 'scale': 'utc', 'unit': 'si:second', 'format': '5d'},
+#   {'label': 'delta_t', 'unit': 'si:nanosecond', 'format': '8.3f'},
+# ]
+# COMMENT =
+60547   281   -1.421
+60547   582   -1.434
+60547   882   -1.465
+60547  1181   -1.508
+60547  1481   -1.530
+60547  1781   -1.530
+60547  2082   -1.539
+60547  2382   -1.532
+```
