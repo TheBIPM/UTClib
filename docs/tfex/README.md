@@ -39,7 +39,7 @@ Optional:
 - SAMPLING\_INTERVAL\_s: a float representing the sampling interval separating each data point, in second
 - AVERAGING\_WINDOW\_s: a float representing the period during which data has been averaged for each data point, in second (if AVERAGING\_WINDOW\_s = SAMPLING\_INTERVAL\_s, the duty cycle is 100%)
 - AUTHOR: a string identifying the author
-- REFPOINTS: a list of dictionaries describing each (time) reference point by an ID label ('id'), a reference time scale ('ts'), a device ('dev'), a device type ('type'). These reference points will be used in the COLUMNS field to identify the link corresponding to the value. E.g. `[{'id': 'A', 'ts': 'UTC(NICT)', 'dev': 'NICT01', 'type': 'TW'},{'id': 'B', 'ts': 'UTC(PTB)', 'dev': 'PTB05', 'type': 'TW'}]`.
+- REFPOINTS: a dictionary describing each (time) reference point by an ID label serving as dictionary key, a reference time scale ('ts'), a device ('dev'), a device type ('type'). These reference points will be used in the COLUMNS field to identify the link corresponding to the value. E.g. `[{'id': 'A', 'ts': 'UTC(NICT)', 'dev': 'NICT01', 'type': 'TW'},{'id': 'B', 'ts': 'UTC(PTB)', 'dev': 'PTB05', 'type': 'TW'}]`.
 - COMMENT: a string for comments. There should be only one "COMMENT" record, but multiline comment is accepted (through TOML syntax).
 
 ### Data
@@ -61,7 +61,7 @@ Data starts just after the header. Empty lines are ignored. The width of each co
 # COLUMNS = [
 #   {'label': 'timetag_MJD', 'scale': 'utc', 'unit': 'si:day', 'format': '5d'},
 #   {'label': 'timetag_SoD', 'scale': 'utc', 'unit': 'si:second', 'format': '5d'},
-#   {'label': 'delta_t', 'unit': 'si:nanosecond', 'format': '8.3f'},
+#   {'label': 'delta_t', 'trip': ['AB'], 'unit': 'si:nanosecond', 'format': '8.3f'},
 # ]
 # COMMENT =
 60547   281   -1.421

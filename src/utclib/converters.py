@@ -77,6 +77,7 @@ def parse_tsoft_file(filename):
           'format': '5d'}),
         (val,
          {'label': 'delta_t',
+          'trip': ['AB'],
           'unit': 'si:nanosecond',
           'format': '8.3f'})
     ])
