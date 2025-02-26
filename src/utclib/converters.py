@@ -15,9 +15,32 @@ def hhmmss2d(hhmmss):
 def parse_tsoft_file(filename):
     first_line = True
     rem = "____"
+    loc = "____"
+    sys = "___"  # Can be : GPS, GLO, GAL, BDS
+    tech = "Unknown" # Can be : GPSP3, GPSPPP, TWSTFT, etc...
     mjd = []
     sod = []
     val = []
+
+    # Tech codes (from https://webtai.bipm.org/ftp/pub/tai/timelinks/lkc/ReadMe_LinkComparison_ftp_v12.pdf)
+    techs = {"333A_": "GPSPPP",
+             "PPPA_": "GPSP3",
+             "MMMA_": "GPSMC",
+             "EEEA_": "GALP3",
+             "CCCA_": "BDSP3",
+             "RRRC_": "GLNMC",
+             "TTTT_": "TWSTFT",
+             "TTTTs": "TWSDRR",
+             "TTTTr": "TWSRS",
+             "TTTTi": "GPS IPPP",
+             "T3B3_": "TWGPPP",
+             "GRB1_": "GPSGLN"
+            }
+
+    for code, tc in techs.items():
+        if filename.split('.')[1] == code:
+            tech = tc
+
     with open(filename) as fp:
         for line in fp:
             ls = line.split()
@@ -50,7 +73,7 @@ def parse_tsoft_file(filename):
         (sod,
          {'label': 'timetag_SoD',
           'scale': 'utc',
-          'unit': 'si:day',
+          'unit': 'si:second',
           'format': '5d'}),
         (val,
          {'label': 'delta_t',
@@ -60,8 +83,9 @@ def parse_tsoft_file(filename):
     tf.hdr.TFEXVER = "0.2"
     tf.hdr.PREFIX = {'si': 'https://si-digital-framework.org/SI/units/'}
     tf.hdr.AUTHOR = "BIPM"
-    # [TBD] put into REFPOINTS
-    tf.hdr.COMMENT = "{} {}".format(rem, loc)
+    tf.hdr.add_refpoint(rp_id="A", rp_ts="Unknown", rp_dev=loc, rp_type=tech)
+    tf.hdr.add_refpoint(rp_id="B", rp_ts="Unknown", rp_dev=rem, rp_type=tech)
+    tf.hdr.COMMENT = ""
     return tf
 
 def parse_ippp_tools_file(self):

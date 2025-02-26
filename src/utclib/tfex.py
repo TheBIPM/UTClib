@@ -158,7 +158,6 @@ class tfex:
         for i, col in enumerate(tfex_obj.ttag_cols):
             timetags[:, i] = tfex_obj.dtypes[col][1](input_data[col][0])
 
-        import ipdb;ipdb.set_trace()  # noqa
         # Timestamps : assume MJD / SoD input for now
         tfex_obj.timestamps = taiseconds.fromMJDSoD(
             timetags['timetag_MJD'],
