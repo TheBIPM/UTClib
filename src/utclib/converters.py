@@ -16,7 +16,6 @@ def parse_tsoft_file(filename):
     first_line = True
     rem = "____"
     loc = "____"
-    sys = "___"  # Can be : GPS, GLO, GAL, BDS
     tech = "Unknown" # Can be : GPSP3, GPSPPP, TWSTFT, etc...
     mjd = []
     sod = []
@@ -66,17 +65,18 @@ def parse_tsoft_file(filename):
 
     tf = tfex.tfex.from_arrays([
         (mjd,
-         {'label': 'timetag_MJD',
+         {'type': 'timetag_MJD',
           'scale': 'utc',
           'unit': 'si:day',
           'format': '5d'}),
         (sod,
-         {'label': 'timetag_SoD',
+         {'type': 'timetag_SoD',
           'scale': 'utc',
           'unit': 'si:second',
           'format': '5d'}),
         (val,
-         {'label': 'delta_t',
+         {'type': 'delta_t',
+          'label': 'link',
           'trip': ['AB'],
           'unit': 'si:nanosecond',
           'format': '8.3f'})

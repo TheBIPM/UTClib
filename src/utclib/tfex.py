@@ -58,11 +58,11 @@ class tfex:
         for i, c in enumerate(col):
             # Extract relevant info from format string
             m = p.search(c["format"])
-            self.dtypes.append((c['label'], type_conv[m["type"]]))
+            self.dtypes.append((c['type'], type_conv[m["type"]]))
             # update list of ranges for data reading
             self.ranges.append([start, start + int(m["width"])])
             start += int(m["width"]) + 1
-            if 'timetag' in c["label"]:
+            if 'timetag' in c["type"]:
                 self.ttag_cols.append(i)
             else:
                 self.data_cols.append(i)
@@ -99,6 +99,8 @@ class tfex:
                     try:
                         # take correct field, don't cast yet
                         val = line[start:end]
+                        if val[-1] == "*":
+                            val = np.nan
                     except IndexError:
                         val = np.nan
                     raw_cols[i].append(val)
@@ -178,12 +180,12 @@ class tfex:
         # store formats
         fmts = []
         for col in self.hdr.COLUMNS:
-            if col['label'] == 'timetag_MJD':
+            if col['type'] == 'timetag_MJD':
                 raw_cols.append(mjds.tolist())
-            elif col['label'] == 'timetag_SoD':
+            elif col['type'] == 'timetag_SoD':
                 raw_cols.append(sods.tolist())
             else:
-                raw_cols.append(self.data[col['label']].tolist())
+                raw_cols.append(self.data[col['type']].tolist())
             fmts.append("{:" + col['format'] + "} ")
         data_output = []
         for i in range(len(raw_cols[0])):

@@ -24,7 +24,7 @@ class tfexhdr:
             'MISSING_EPOCHS': bool,
             'AUTHOR': str,
             'DATE':str,
-            'REFPOINTS': dict,
+            'REFPOINTS': list,
             'COLUMNS': list,
             'CONSTANT_DELAYS': list,
             'COMMENT': str}
@@ -62,8 +62,9 @@ class tfexhdr:
 
     def add_refpoint(self, rp_id=None, rp_ts=None, rp_dev=None, rp_type=None):
         if self.REFPOINTS is None:
-            self.REFPOINTS = {}
-        self.REFPOINTS[rp_id] = {'ts': rp_ts, 'dev': rp_dev, 'type': rp_type}
+            self.REFPOINTS = []
+        self.REFPOINTS.append(
+            {'id': rp_id, 'ts': rp_ts, 'dev': rp_dev, 'type': rp_type})
 
     def write(self):
         """ return a string containing gfile header (with trailing #s)
@@ -78,11 +79,6 @@ class tfexhdr:
                 for v in val:
                     hdr_lines.append("#   {},".format(repr(v)))
                 hdr_lines.append("# ]")
-            elif isinstance(val, dict):
-                hdr_lines.append("# {} = {{".format(kw))
-                for k,v in val.items():
-                    hdr_lines.append("#   {}:{},".format(repr(k), repr(v)))
-                hdr_lines.append("# }}")
             else:
                 hdr_lines.append("# {} = {}".format(kw, val))
         return "\n".join(hdr_lines)
