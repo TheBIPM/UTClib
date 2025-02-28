@@ -3,6 +3,7 @@
 
 import utclib.tfex as tfex
 import numpy as np
+import re
 
 
 def hhmmss2d(hhmmss):
@@ -17,9 +18,12 @@ def parse_tsoft_file(filename):
     rem = "____"
     loc = "____"
     tech = "Unknown" # Can be : GPSP3, GPSPPP, TWSTFT, etc...
+    tau0 = None
     mjd = []
     sod = []
     val = []
+    smo = []
+    dlt = []
 
     # Tech codes (from https://webtai.bipm.org/ftp/pub/tai/timelinks/lkc/ReadMe_LinkComparison_ftp_v12.pdf)
     techs = {"333A_": "GPSPPP",
@@ -40,11 +44,23 @@ def parse_tsoft_file(filename):
         if filename.split('.')[1] == code:
             tech = tc
 
+    pattern_tau0 = r"Tau0=\s*(?P<tau0>\d+)s"
     with open(filename) as fp:
         for line in fp:
             ls = line.split()
             if first_line:
+                # Find samplin interval
+                m = re.findall(pattern_tau0, line)
+                if m:
+                    tau0 = float(m[0])
                 header = line.split()
+                # find local and remote
+                try:
+                    rem = header[0].split('/')[1].split('-')[1]
+                    loc = header[0].split('/')[1].split('-')[0].split('__')[1]
+                except IndexError:
+                    pass
+
                 first_line = False
                 continue
             if len(ls) != 4:
@@ -55,13 +71,17 @@ def parse_tsoft_file(filename):
                 mjd.append(int(np.floor(float(ls[0]))))
                 sod.append(int(np.floor((float(ls[0])%1 * 86400))))
                 val.append(float(ls[1]))
+                try:
+                    smo.append(float(ls[2]))
+                except ValueError:
+                    smo.append(np.nan)
+                try:
+                    dlt.append(float(ls[3]))
+                except ValueError:
+                    dlt.append(np.nan)
+
             except ValueError:
                 continue
-        try:
-            rem = header[0].split('/')[1].split('-')[1]
-            loc = header[0].split('/')[1].split('-')[0].split('__')[1]
-        except IndexError:
-            pass
 
     tf = tfex.tfex.from_arrays([
         (mjd,
@@ -79,11 +99,22 @@ def parse_tsoft_file(filename):
           'label': 'link',
           'trip': ['AB'],
           'unit': 'si:nanosecond',
-          'format': '8.3f'})
+          'format': '8.3f'}),
+        (smo,
+         {'type': 'delta_t2',
+          'label': 'smoothed Vondrak',
+          'unit': 'si:nanosecond',
+          'format': '8.3f'}),
+        (dlt,
+         {'type': 'delta_t3',
+          'label': 'data - smoothed',
+          'unit': 'si:nanosecond',
+          'format': '8.3f'}),
     ])
     tf.hdr.TFEXVER = "0.2"
     tf.hdr.PREFIX = {'si': 'https://si-digital-framework.org/SI/units/'}
     tf.hdr.AUTHOR = "BIPM"
+    tf.hdr.SAMPLING_INTERVAL_s = tau0
     tf.hdr.add_refpoint(rp_id="A", rp_ts="Unknown", rp_dev=loc, rp_type=tech)
     tf.hdr.add_refpoint(rp_id="B", rp_ts="Unknown", rp_dev=rem, rp_type=tech)
     tf.hdr.COMMENT = ""

@@ -15,13 +15,13 @@
 #              {id = 'E',  ts =  "UTC(NICT)", type ="REFPOINT"}]
 # COLUMNS = [
 # {type = "timetag_MJD", scale="gpstime", unit = "si:day", format = "5d"},
-# {type = "timetag_SoD", scale="gpstime", unit = "si:second", format = ""},
-# {type = "delta_t", trip = ['AB', 'CE'], unit = "si:nanosecond",format = "7.3f"},
+# {type = "timetag_SoD", scale="gpstime", unit = "si:second", format = "8.3f"},
+# {label = "NICT-PTB link", type = "delta_t", trip = ['AB', 'CE'], unit = "si:nanosecond",format = "7.3f"},
 # {type = "delta_f", trip = ['AB'], unit = "si:hertz",format = "7.3f"},
-# {type = "unc", colref=3, unit = "si:ns",format = "7.3f"},
+# {type = "unc", colref="NICT-PTB link", unit = "si:ns",format = "7.3f"},
 # {type = "smoothed_vondrak_0.4", colref=3, unit = "si:ns",format = "7.3f"},
-# {type = "flag", colref=3, format = "1s", possible_values = {'O' = "outlier", 'C' = 'phase_reset'}},
-# {type = "flag", colref=4, format = "1s", possible_values = {'O' = "original", 'C' = 'corrected'}},
+# {type = "flag", colref="NICT-PTB link", format = "1s", possible_values = {'O' = "outlier", 'C' = 'phase_reset'}},
+# {type = "flag", colref="NICT-PTB link", format = "1s", possible_values = {'O' = "original", 'C' = 'corrected'}},
 # {type = "secondary_timetag_year", scale="utc", format = "04d"},
 # {type = "secondary_timetag_month", scale="utc", format = "02d"},
 # {type = "secondary_timetag_year", scale="utc", format = "02d"},
