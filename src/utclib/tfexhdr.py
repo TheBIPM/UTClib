@@ -7,6 +7,7 @@ A fixed set of parameters is allowed
 """
 
 import toml
+import logging
 
 class TfexHdrError(Exception):
     pass
@@ -18,7 +19,7 @@ class tfexhdr:
             'MJDSTART': float,
             'MJDSTOP': float,
             'NDATA': int,
-            'PREFIX': str,
+            'PREFIX': dict,
             'SAMPLING_INTERVAL_s': float,
             'AVERAGING_WINDOW_s': float,
             'MISSING_EPOCHS': bool,
@@ -49,7 +50,12 @@ class tfexhdr:
     def loads(self, toml_string: str):
         """ Loads values from an input string that is valid TOML
         """
-        parsed_toml = toml.loads(toml_string)
+        try:
+            parsed_toml = toml.loads(toml_string)
+        except toml.decoder.TomlDecodeError as inst:
+            print(inst)
+            logging.error("Cannot parse this header:\n%s" % toml_string)
+            raise SystemExit
         for kw, value in parsed_toml.items():
             if kw not in self.valid_keywords_and_types:
                 raise TfexHdrError("Unauthorized keyword: %s" % kw)
@@ -66,6 +72,9 @@ class tfexhdr:
         self.REFPOINTS.append(
             {'id': rp_id, 'ts': rp_ts, 'dev': rp_dev, 'type': rp_type})
 
+
+
+
     def write(self):
         """ return a string containing gfile header (with trailing #s)
         """
@@ -77,11 +86,38 @@ class tfexhdr:
             if isinstance(val, list):
                 hdr_lines.append("# {} = [".format(kw))
                 for v in val:
-                    hdr_lines.append("#   {},".format(repr(v)))
+                    hdr_lines.append("#   {},".format(toml_repr(v)))
                 hdr_lines.append("# ]")
             else:
-                hdr_lines.append("# {} = {}".format(kw, val))
+                hdr_lines.append("# {} = {}".format(kw, toml_repr(val)))
         return "\n".join(hdr_lines)
+
+
+def toml_repr(val):
+    # Adjust representation of python types in TOML to keep inline dicts
+    if isinstance(val, str):
+        return "'" + val + "'"
+    elif isinstance(val, dict):
+        out = "{ "
+        for key, v in val.items():
+            out += " {}  = {},".format(key, toml_repr(v))
+        out = out[:-1] + " }"
+        return out
+    elif isinstance(val, list):
+        out = "[ "
+        for item in val:
+            out += " {},".format(toml_repr(item))
+        out = out[:-1] + " ]"
+        return out
+    elif isinstance(val, bool):
+        if val:
+            return 'true'
+        else:
+            return 'false'
+    elif val is None:
+        return ""
+    else:
+        return val
 
 
 
