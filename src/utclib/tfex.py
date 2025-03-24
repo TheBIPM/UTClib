@@ -58,11 +58,11 @@ class tfex:
         for i, c in enumerate(col):
             # Extract relevant info from format string
             m = p.search(c["format"])
-            self.dtypes.append((c['type'], type_conv[m["type"]]))
+            self.dtypes.append((c["label"], type_conv[m["type"]]))
             # update list of ranges for data reading
             self.ranges.append([start, start + int(m["width"])])
             start += int(m["width"]) + 1
-            if 'timetag' in c["type"]:
+            if "timetag" in c and c["timetag"] is True:
                 self.ttag_cols.append(i)
             else:
                 self.data_cols.append(i)
@@ -120,12 +120,9 @@ class tfex:
             tfex_obj.data[:, i] = tfex_obj.dtypes[col][1](raw_cols[col])
         for i, col in enumerate(tfex_obj.ttag_cols):
             timetags[:, i] = tfex_obj.dtypes[col][1](raw_cols[col])
-
-        # Timestamps : assume MJD / SoD input for now
-        tfex_obj.timestamps = taiseconds.fromMJDSoD(
-            timetags['timetag_MJD'],
-            timetags['timetag_SoD'])
+        tfex_obj.ingest_timetags(timetags)
         return tfex_obj
+
 
     @classmethod
     def from_arrays(self, input_data: list):
@@ -159,12 +156,24 @@ class tfex:
             tfex_obj.data[:, i] = tfex_obj.dtypes[col][1](input_data[col][0])
         for i, col in enumerate(tfex_obj.ttag_cols):
             timetags[:, i] = tfex_obj.dtypes[col][1](input_data[col][0])
+        tfex_obj.ingest_timetags(timetags)
+        return tfex_obj
+
+    def ingest_timetags(self, timetags):
+        """ Take whatever timetags are input and set self.timestamps
+        """
+
+        cols = timetags.dtype.names
 
         # Timestamps : assume MJD / SoD input for now
-        tfex_obj.timestamps = taiseconds.fromMJDSoD(
-            timetags['timetag_MJD'],
-            timetags['timetag_SoD'])
-        return tfex_obj
+        if 'MJD' in cols and 'SoD' in cols:
+            self.timestamps = taiseconds.fromMJDSoD(
+                timetags['MJD'],
+                timetags['SoD'])
+        else:
+            logging.error(
+                'Need MJD and SoD timetags, other methods not implemented yet')
+            raise SystemExit
 
 
     def write_to_file(self,file_path):
@@ -180,12 +189,12 @@ class tfex:
         # store formats
         fmts = []
         for col in self.hdr.COLUMNS:
-            if col['type'] == 'timetag_MJD':
+            if col['label'] == 'MJD':
                 raw_cols.append(mjds.tolist())
-            elif col['type'] == 'timetag_SoD':
+            elif col['label'] == 'SoD':
                 raw_cols.append(sods.tolist())
             else:
-                raw_cols.append(self.data[col['type']].tolist())
+                raw_cols.append(self.data[col['label']].tolist())
             fmts.append("{:" + col['format'] + "} ")
         data_output = []
         for i in range(len(raw_cols[0])):

@@ -16,9 +16,9 @@
 #   {id = 'E', ts =  "UTC(NICT)", type ="REFPOINT"}
 # ]
 # COLUMNS = [
-# {type = "timetag_MJD", scale="gpstime", unit = "si:day", format = "5d"},
-# {type = "timetag_SoD", scale="gpstime", unit = "si:second", format = "8.3f"},
-# {type = "delta_t", trip = ['AB', 'CE'], unit = "si:nanosecond",format = "8.3f"},
+# {timetag = true, label = "MJD", scale="gpstime", unit = "si:day", format = "5d"},
+# {timetag = true, label = "SoD", scale="gpstime", unit = "si:second", format = "8.3f"},
+# {label = "delta_t", trip = ['AB', 'CE'], unit = "si:nanosecond",format = "8.3f"},
 # ]
 # CONSTANT_DELAYS = [
 #  {trip = ['ED'], unit = "si:nanosecond", value = 102.7, type = "TOTDLY"}

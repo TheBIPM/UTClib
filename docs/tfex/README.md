@@ -27,7 +27,7 @@ When stripped from its first character, the strings form a valid TOML (https://t
 Mandatory:
 
 - TFEXVER: a string containing the version of TFEX format, e.g. `0.2`
-- COLUMNS: a list of dictionaries describing each column of the file through the type of data ('type'), unit ('unit', using the prefix above to resolve to a PID for a known digital representation of units), format descriptor ('format'), and an optional 'label'. Types starting with "timetag\_" identify columns used to date the data points (as opposed to values). It is then possible to specify the scale used (UTC by default). The optional 'trip' descriptor combines REFPOINTS (see below) to indicate what link is used. Type 'flag' should have an associated set of values ('possible\_values').
+- COLUMNS: a list of dictionaries describing each column of the file through the label of data ('label', unique), unit ('unit', using the prefix above to resolve to a PID for a known digital representation of units), format descriptor ('format'). Optional attribute 'timetag', if set to 'true', identifies columns used to date the data points (as opposed to values). It is then possible to specify the scale used (UTC by default). The optional 'trip' descriptor combines REFPOINTS (see below) to indicate what link is used. Type 'flag' should have an associated set of values ('possible\_values').
 
 Strongly recommended:
 
@@ -50,6 +50,11 @@ Optional:
 
 Data starts just after the header. Empty lines are ignored. The width of each column is set by the width in the "COLUMNS" header, the ordering is the same as in the list, columns are separated by a space character (0x20). Non-values are represented by the character "\*". Otherwise the representation of the value must be parsable using the format string provided in the COLUMNS header. 
 
+### Authorized sets of timetags
+
+One aim of TFEX is to provide flexibility on input and output timetags, providing tools to convert to and from most common formats. Detection is based on the list of "labels" assigned to each column carrying "timetag: true".
+
+- `['MJD', 'SoD']`: the column identified by "MJD" contains an integer representing the MJD, and "SoD" contains an integer or a float (according to its "format" field) representing the number of seconds elapsed since midnight of the corresponding MJD.
 
 
 # Example of TFEX file generated from a TSOFT output
@@ -63,9 +68,9 @@ Data starts just after the header. Empty lines are ignored. The width of each co
 #   {'id': 'B', 'ts': 'Unknown', 'dev': 'PT3', 'type': 'GPSPPP'},
 # ]
 # COLUMNS = [
-#   {'type': 'timetag_MJD', 'scale': 'utc', 'unit': 'si:day', 'format': '5d'},
-#   {'type': 'timetag_SoD', 'scale': 'utc', 'unit': 'si:second', 'format': '5d'},
-#   {'type': 'delta_t', 'label': 'link', 'trip': ['AB'], 'unit': 'si:nanosecond', 'format': '8.3f'},
+#   {timetag: true, 'label': 'MJD', 'scale': 'utc', 'unit': 'si:day', 'format': '5d'},
+#   {timetag: true, 'label': 'SoD', 'scale': 'utc', 'unit': 'si:second', 'format': '5d'},
+#   {'label': 'delta_t', 'label': 'link', 'trip': ['AB'], 'unit': 'si:nanosecond', 'format': '8.3f'},
 # ]
 # COMMENT = 
 60547   281   -1.421 

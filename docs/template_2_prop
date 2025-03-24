@@ -14,19 +14,19 @@
 #              {id = 'D',  ts = "UTC(NICT)", dev = "NC5S",   type = "GNSS"},
 #              {id = 'E',  ts =  "UTC(NICT)", type ="REFPOINT"}]
 # COLUMNS = [
-# {type = "timetag_MJD", scale="gpstime", unit = "si:day", format = "5d"},
-# {type = "timetag_SoD", scale="gpstime", unit = "si:second", format = "8.3f"},
-# {label = "NICT-PTB link", type = "delta_t", trip = ['AB', 'CE'], unit = "si:nanosecond",format = "7.3f"},
-# {type = "delta_f", trip = ['AB'], unit = "si:hertz",format = "7.3f"},
-# {type = "unc", colref="NICT-PTB link", unit = "si:ns",format = "7.3f"},
-# {type = "smoothed_vondrak_0.4", colref=3, unit = "si:ns",format = "7.3f"},
-# {type = "flag", colref="NICT-PTB link", format = "1s", possible_values = {'O' = "outlier", 'C' = 'phase_reset'}},
-# {type = "flag", colref="NICT-PTB link", format = "1s", possible_values = {'O' = "original", 'C' = 'corrected'}},
-# {type = "secondary_timetag_year", scale="utc", format = "04d"},
-# {type = "secondary_timetag_month", scale="utc", format = "02d"},
-# {type = "secondary_timetag_year", scale="utc", format = "02d"},
-# {type = "secondary_timetag_yyyymmddhhmmss", scale="utc", format = "14d"},
-# {type = "comment", format='256s'}
+# {timetag = True, label = "MJD", scale="gpstime", unit = "si:day", format = "5d"},
+# {timetag = True, label = "SoD", scale="gpstime", unit = "si:second", format = "8.3f"},
+# {label = "delta_t", trip = ['AB', 'CE'], unit = "si:nanosecond",format = "7.3f"},
+# {label = "delta_f", trip = ['AB'], unit = "si:hertz",format = "7.3f"},
+# {label = "unc", colref="NICT-PTB link", unit = "si:ns",format = "7.3f"},
+# {label = "smoothed_vondrak_0.4", colref=3, unit = "si:ns",format = "7.3f"},
+# {label = "flag", colref="NICT-PTB link", format = "1s", possible_values = {'O' = "outlier", 'C' = 'phase_reset'}},
+# {label = "flag", colref="NICT-PTB link", format = "1s", possible_values = {'O' = "original", 'C' = 'corrected'}},
+# {label = "secondary_timetag_year", scale="utc", format = "04d"},
+# {label = "secondary_timetag_month", scale="utc", format = "02d"},
+# {label = "secondary_timetag_year", scale="utc", format = "02d"},
+# {label = "secondary_timetag_yyyymmddhhmmss", scale="utc", format = "14d"},
+# {label = "comment", format='256s'}
 # ]
 # CONSTANT_DELAYS = [
 #  {trip = ['ED'], unit = "si:nanosecond", value = 102.7, type = "TOTDLY"}
