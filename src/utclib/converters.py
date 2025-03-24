@@ -12,6 +12,11 @@ def hhmmss2d(hhmmss):
     ss = int(hhmmss[4:])
     return hh / 24 + mm / 1440 + ss / 86400
 
+def hhmmss2s(hhmmss_as_int):
+    hh = hhmmss_as_int // 10000
+    mm = (hhmmss_as_int - hh*10000) // 100
+    ss = hhmmss_as_int % 100
+    return hh * 3600 + mm * 60 + ss
 
 def parse_tsoft_file(filename):
     first_line = True
@@ -119,12 +124,17 @@ def parse_tsoft_file(filename):
     tf.hdr.COMMENT = ""
     return tf
 
-def parse_ippp_tools_file(self):
+
+def parse_ippp_tools_file(filename):
+    """ Converts from the custom "IPPP tools" format
+    """
     lab1 = ""
     lab2 = ""
-    data = []
     sign_changed = False
-    with open(self.input_file) as fp:
+    mjd = []
+    sod = []
+    val = []
+    with open(filename) as fp:
         for line in fp:
             if "LAB1 =" in line:
                 lab1 = line.split()[2]
@@ -139,42 +149,85 @@ def parse_ippp_tools_file(self):
             if "@END Header" in line:
                 continue
             try:
-                mjd, hhmmss, val = line.split()
+                mjd_i, hhmmss_i, val_i = line.split()
                 if not sign_changed:
-                    val = -float(val)
-                data.append([int(mjd) + hhmmss2d(hhmmss),
-                             float(val)])
-            except IndexError:
+                    val_i = -float(val_i)
+                mjd.append(int(mjd_i))
+                sod.append(int(hhmmss2s(hhmmss_i)))
+                val.append(float(val_i))
+            except ValueError:
                 continue
-    return {'data': np.array(data),
-            'loc': lab2,
-            'rem': lab1,
-            'unit': 1e-9,
-            'linktype': 'ippp'}
+    tf = tfex.tfex.from_arrays([
+        (mjd,
+         {'timetag': True,
+          'label': 'MJD',
+          'scale': 'utc',
+          'unit': 'si:day',
+          'format': '5d'}),
+        (sod,
+         {'timetag': True,
+          'label': 'SoD',
+          'scale': 'utc',
+          'unit': 'si:second',
+          'format': '5d'}),
+        (val,
+         {'label': 'delta_t',
+          'trip': ['AB'],
+          'unit': 'si:nanosecond',
+          'format': '8.3f'}),
+    ])
+    tf.hdr.TFEXVER = "0.2"
+    tf.hdr.PREFIX = {'si': 'https://si-digital-framework.org/SI/units/'}
+    tf.hdr.AUTHOR = "BIPM"
+    tech="IPPP"
+    tf.hdr.add_refpoint(rp_id="A", rp_ts="Unknown", rp_dev=lab1, rp_type=tech)
+    tf.hdr.add_refpoint(rp_id="B", rp_ts="Unknown", rp_dev=lab2, rp_type=tech)
+    tf.hdr.COMMENT = ""
+    return tf
 
-def parse_fibre_file(self):
-    labs = self.input_file.split('_')[2]
-    lab1, lab2 = labs.split('-')
-    print("Parsing {}".format(self.input_file))
-    with open(self.input_file) as fp:
-        data = np.genfromtxt(fp)
-    # Resample from to 30s data
-    w = 30
-    int_mjd = int(data[0, 0])
-    samples = {}
-    for d in data:
-        slot = np.floor(((d[0] - int_mjd) * 86400) / w) * w
-        if slot not in samples:
-            samples[slot] = []
-        if np.abs(d[1]) < 10000:
-            samples[slot].append(d[1])
-    output = []
-    for s in samples.keys():
-        output.append([int_mjd + s / 86400,
-                       np.nanmean(samples[s])])
 
-    return {'data': np.array(output),
-            'loc': lab1,
-            'rem': lab2,
-            'unit': 1e-9,
-            'linktype': 'fibre'}
+def parse_cggtts_file(filename):
+    """ Convert the REFSYS values from a CGGTTS file into a TFEX object
+    """
+    import utclib.pycggtts as pc
+    cg = pc.Cggtts()
+    cg.read(filename)
+    refsys_median = cg.refsys_weighted_average_per_epoch()
+    mjd = refsys_median['MJD'].astype(int).values
+    sod = hhmmss2s(refsys_median['STTIME'].astype(int).values)
+    val = refsys_median['REFSYS'].astype(int).values/10
+    tf = tfex.tfex.from_arrays([
+        (mjd,
+         {'timetag': True,
+          'label': 'MJD',
+          'scale': 'utc',
+          'unit': 'si:day',
+          'format': '5d'}),
+        (sod,
+         {'timetag': True,
+          'label': 'SoD',
+          'scale': 'utc',
+          'unit': 'si:second',
+          'format': '5d'}),
+        (val,
+         {'label': 'delta_t',
+          'trip': ['AB'],
+          'unit': 'si:nanosecond',
+          'format': '8.1f'}),
+    ])
+    tf.hdr.TFEXVER = "0.2"
+    tf.hdr.PREFIX = {'si': 'https://si-digital-framework.org/SI/units/'}
+    tf.hdr.AUTHOR = "BIPM"
+    tf.hdr.MJDSTART = mjd[0]
+    tf.hdr.MJDSTOP = mjd[-1]
+    tech = cg.const + "_" + cg.freq
+    tf.hdr.add_refpoint(
+        rp_id="A", rp_ts=cg.header['REF'], rp_dev=cg.header['RCVR'], rp_type=tech)
+    tf.hdr.add_refpoint(
+        rp_id="B", rp_ts=cg.const, rp_dev='REFSYS', rp_type=tech)
+    tf.hdr.COMMENT = ""
+    return tf
+
+
+
+
