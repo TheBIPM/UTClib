@@ -61,16 +61,16 @@ One aim of TFEX is to provide flexibility on input and output timetags, providin
 
 ```
 # TFEXVER = 0.2
-# PREFIX = {'si': 'https://si-digital-framework.org/SI/units/'}
+# PREFIX = { si = 'https://si-digital-framework.org/SI/units/'}
 # AUTHOR = BIPM
 # REFPOINTS = [
-#   {'id': 'A', 'ts': 'Unknown', 'dev': 'OP3', 'type': 'GPSPPP'},
-#   {'id': 'B', 'ts': 'Unknown', 'dev': 'PT3', 'type': 'GPSPPP'},
+#   { id = 'A', ts = 'Unknown', dev = 'OP3', type = 'GPSPPP'},
+#   { id = 'B', ts = 'Unknown', dev = 'PT3', type = 'GPSPPP'},
 # ]
 # COLUMNS = [
-#   {timetag: true, 'label': 'MJD', 'scale': 'utc', 'unit': 'si:day', 'format': '5d'},
-#   {timetag: true, 'label': 'SoD', 'scale': 'utc', 'unit': 'si:second', 'format': '5d'},
-#   {'label': 'delta_t', 'label': 'link', 'trip': ['AB'], 'unit': 'si:nanosecond', 'format': '8.3f'},
+#   {timetag = true, label = 'MJD', scale = 'utc', unit = 'si:day', format = '5d'},
+#   {timetag = true, label = 'SoD', scale = 'utc', unit = 'si:second', format = '5d'},
+#   {label = 'delta_t', label = 'link', trip = ['AB'], unit = 'si:nanosecond', format = '8.3f'},
 # ]
 # COMMENT = 
 60547   281   -1.421 

@@ -98,13 +98,13 @@ def toml_repr(val):
     if isinstance(val, str):
         return "'" + val + "'"
     elif isinstance(val, dict):
-        out = "{ "
+        out = "{"
         for key, v in val.items():
             out += " {}  = {},".format(key, toml_repr(v))
         out = out[:-1] + " }"
         return out
     elif isinstance(val, list):
-        out = "[ "
+        out = "["
         for item in val:
             out += " {},".format(toml_repr(item))
         out = out[:-1] + " ]"

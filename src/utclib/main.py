@@ -1,9 +1,11 @@
 import argparse
 import os
-import utclib.converters as conv
 import logging
+import utclib.tfex as tfex
 
-def get_parser():
+# Convert
+
+def get_parser_conv():
     """ Dedicated function to collect command line parameters, so it can
     autogenerate doc too
     """
@@ -26,7 +28,8 @@ def get_parser():
 
 
 def tfexconv():
-    args = get_parser().parse_args()
+    import utclib.converters as conv
+    args = get_parser_conv().parse_args()
 
     if not args.output:
         args.output = os.path.join(".",
@@ -45,3 +48,41 @@ def tfexconv():
         logging.error("Unknown or unimplemented input type: %s" % args.type )
         raise SystemExit
     tf.write_to_file(args.output)
+
+# diff
+
+def get_parser_diff():
+    """ Dedicated function to collect command line parameters, so it can
+    autogenerate doc too
+    """
+    parser = argparse.ArgumentParser(
+        description="Command-line utility for time and frequency links")
+    parser.add_argument(
+        'input1',
+        type=str,
+        help="first tfex file")
+    parser.add_argument(
+        'input2',
+        type=str,
+        help="second tfex file")
+    parser.add_argument(
+        '-o', '--output',
+        type=str,
+        help="output file (default : ./input1-input2.tfex)"
+    )
+    return parser
+
+
+def tfexdiff():
+    args = get_parser_diff().parse_args()
+
+    if not args.output:
+        args.output = os.path.join(
+            ".",
+            os.path.splitext(args.input1)[0] + "-" +
+            os.path.splitext(args.input2)[0] + ".tfex")
+    tf1 = tfex.tfex.from_file(args.input1)
+    tf2 = tfex.tfex.from_file(args.input2)
+    interp = tf2.interpolate(tf1.timestamps)
+    diff.write_to_file(args.output)
+

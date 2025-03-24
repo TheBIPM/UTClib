@@ -177,7 +177,7 @@ class tfex:
 
 
     def write_to_file(self,file_path):
-        """write tfex object to file
+        """ write tfex object to file
         Parameters
         ----------
         file_path : str
@@ -207,4 +207,33 @@ class tfex:
         with open(file_path, "w") as fp:
             fp.write(self.hdr.write() + "\n")
             fp.write("\n".join(data_output))
+
+    def interpolate(self, timestamps, cols=None):
+        """ Return the columns, interpolated according to the requested array
+        of timestamps
+
+        Parameters
+        ----------
+        timestamps: utclib.taiseconds.taisseconds()
+            A taiseconds object containing all timestamps
+        cols: list
+            List of columns labels to interpolate. If None, take all columns
+
+        Returns
+        utclib.tabarray()
+        """
+
+        if cols is None:
+            cols = self.data.dtype.names
+
+        ndata = len(timestamps)
+        data = tabarray(np.empty((ndata, ), dtype=dtypes_data))
+
+
+
+
+    def join(self, tf2):
+        """ add columns to the current tfex, taking values from tf2,
+        interpolating data if needed"""
+
 

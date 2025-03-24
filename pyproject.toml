@@ -25,6 +25,8 @@ repository = "https://github.com/TheBIPM/UTClib"
 
 [project.scripts]
 tfexconv = "utclib.main:tfexconv"
+tfexdiff = "utclib.main:tfexdiff"
+tfexplot = "utclib.main:tfexplot"
 
 [tool.pytest.ini_options]
 addopts = [
