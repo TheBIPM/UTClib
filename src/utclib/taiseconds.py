@@ -32,6 +32,7 @@ class taiseconds:
     TAISEC_GPS0 = 694656019
     TAISEC_BDS0 = 1514764833
     TAISEC_GAL0 = 1313971219
+    DSEC_TAIGPS = 19
     # first colums in second elsapsed since TAI start epoch, second could is the number of non leap secons elapsed , third colum is TAI - UTC in seconds after that date
     LEAP_SEC_TAB = np.array( [[ 441763210, 10]   # 1972   1    1 UTC
                              ,[ 457488011, 11]   # 1972   7    1 UTC
@@ -194,6 +195,61 @@ class taiseconds:
         obj.applyLeapSecond()
 
         obj.tai_seconds[idx_leap,0] += 1
+        return obj
+
+     @classmethod
+    def fromGPSCalendar(self,years,months,days,hours,minutes,seconds):
+        """ createthe object from a numpy array of calendar in gps time
+        Parameters
+        ----------
+        years   : numpy array (nx)
+        months  : numpy array (nx)
+        days    : numpy array (nx)
+        hours   : numpy array (nx)
+        minutes : numpy array (nx)
+        seconds : numpy array (nx)
+
+        """
+        if isinstance(years, np.ndarray) and isinstance(months, np.ndarray) and isinstance(days, np.ndarray) and isinstance(hours, np.ndarray) and isinstance(minutes, np.ndarray) and isinstance(seconds, np.ndarray):
+            if years.shape[0] != months.shape[0] or years.shape[0] != days.shape[0] or years.shape[0] != hours.shape[0] or years.shape[0] != minutes.shape[0] or years.shape[0] != seconds.shape[0]:
+                print("ERROR: imput array do not have the same shape ")
+                return
+        #else:
+        #    if type(years) != type(months) or type(years) != type(days) or type(years) != type(hours) or type(years) != type(minutes) or type(years) != type(seconds):
+        #        print("ERROR: imput array do not have the same type ")
+        #       return
+
+
+        obj = self()
+        seconds = np.asarray(seconds)
+
+
+        frac_seconds = np.remainder(seconds,1)
+        seconds = np.floor(seconds)
+
+        # convert ot numpy datatime64
+        milliseconds=None
+        microseconds=None
+        nanoseconds=None
+        years = np.asarray(years) - 1970
+        months = np.asarray(months) - 1
+        days = np.asarray(days) - 1
+        types = ('<M8[Y]', '<m8[M]', '<m8[D]', '<m8[h]','<m8[m]', '<m8[s]', '<m8[ms]', '<m8[us]', '<m8[ns]')
+        vals = (years, months, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds)
+        npdate = sum(np.asarray(v, dtype=t) for t, v in zip(types, vals) if v is not None)
+
+
+
+        obj.tai_seconds = np.zeros((years.size,2),np.int64)
+        timedelta = npdate - obj.DATETIME64_TAI0
+        obj.tai_seconds[:,0] = timedelta.astype('timedelta64[s]').astype(np.int64)
+        obj.tai_seconds[:,1] = np.round(frac_seconds*self.FRAC_MULTIPLIER)
+        obj.tai_seconds[:,0] += obj.DSEC_TAIGPS
+
+
+
+
+
         return obj
 
     @classmethod
@@ -612,8 +668,10 @@ class taiseconds:
             print('WARNING: double precision not enough for the datset, possible incorrect result')
         if min_sec1 < min_sec2:
             floatep2 = floatep2 + (min_sec2 - min_sec1)
+            min_sec = min_sec1
         else:
             floatep1 = floatep1 + (min_sec1 - min_sec2)
+            min_sec = min_sec2
         intep1 = np.round(floatep1/rate).astype(np.int64)
         intep2 = np.round(floatep2/rate).astype(np.int64)
 
@@ -626,7 +684,7 @@ class taiseconds:
         intsec = np.floor(unionset).astype(np.int64)
         fracsec = np.round(np.remainder(unionset,1)*self.FRAC_MULTIPLIER).astype(np.int64)
         obj.tai_seconds = np.zeros((fracsec.size,2),np.int64)
-        obj.tai_seconds[:,0] = intsec
+        obj.tai_seconds[:,0] = intsec + min_sec
         obj.tai_seconds[:,1] = fracsec
         return obj,i1[si1],i2[si2]
     
