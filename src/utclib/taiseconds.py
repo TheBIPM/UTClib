@@ -84,7 +84,25 @@ class taiseconds:
 
         obj.applyLeapSecond()
         return obj
+    
+    @classmethod
+    def fromBesselianDate(self,bess_date):
+        """ createthe object from a numpy array of besselian date
+        
+        see: https://maia.usno.navy.mil/information/eo-values
+        Parameters
+        ----------
+        bess_date : numpy array (nx1)  besselian dates
 
+        """
+        obj = self()
+        mjd = (bess_date - 2000)*365.2422 + 51544.03
+        obj.tai_seconds = np.zeros((len(mjd),2),np.int64)
+        obj.tai_seconds[:,0] = np.floor((mjd - obj.MJD_TAI0)*86400)
+        obj.tai_seconds[:,1] = np.round(np.remainder((mjd - obj.MJD_TAI0)*86400,1)*self.FRAC_MULTIPLIER)
+
+        obj.applyLeapSecond()
+        return obj
     @classmethod
     def fromMJDSoD(self, mjd, sod):
         """ create the object from a numpy array of MJDs + numpy array of Sod
@@ -350,6 +368,18 @@ class taiseconds:
         mjd[sod == 86400] += 1
         sod[sod == 86400] = 0
         return (mjd, sod)
+    
+    def getBesseliandate(self):
+        """ get the Beseelian date
+        Parameters
+        ----------
+
+        Output
+        ----------
+        mjd : numpy array (nx1) float64 besselian date
+
+        """
+        return  2000.000 + (self.getMJD() - 51544.03) / 365.2422
 
     def getUnixTimeInt(self, disable_warn=False):
         """ get the MJD
@@ -404,6 +434,29 @@ class taiseconds:
         seconds[is_leap] += 1
 
         return years, months, days, hours, minutes, seconds
+
+    def getNPDateTime(self):
+        """ get the calendar date
+        Parameters
+        ----------
+
+        Output
+        ----------
+        dates     : numpy array (nx1) datetime64
+        
+        """
+        years, months, days, hours, minutes, seconds = self.getCalendarDate()
+        years = np.asarray(years) - 1970
+        months = np.asarray(months) - 1
+        days = np.asarray(days) - 1
+        nanoseconds = np.round(np.remainder(seconds*1e6,1)*1e3)
+        microseconds = np.floor(np.remainder(seconds*1e3,1)*1e3)
+        milliseconds = np.floor(np.remainder(seconds,1)*1e3)
+        seconds = np.floor(seconds)
+        types = ('<M8[Y]', '<m8[M]', '<m8[D]', '<m8[h]','<m8[m]', '<m8[s]','<m8[ms]', '<m8[us]')#   '<m8[ns]')
+        vals = (years, months, days, hours,minutes, seconds,milliseconds, microseconds)# nanoseconds)
+        return sum(np.asarray(v, dtype=t) for t, v in zip(types, vals) if v is not None)
+
 
     def getGPSWeekSow(self):
         """ create the object from a numpy array of MJDs
@@ -504,8 +557,10 @@ class taiseconds:
             print('WARNING: double precision not enough for the datset, possible incorrect result')
         if min_sec1 < min_sec2:
             floatep2 = floatep2 + (min_sec2 - min_sec1)
+            min_sec = min_sec1
         else:
             floatep1 = floatep1 + (min_sec1 - min_sec2)
+            min_sec = min_sec2
         intep1 = np.round(floatep1/rate).astype(np.int64)
         intep2 = np.round(floatep2/rate).astype(np.int64)
 
@@ -516,7 +571,7 @@ class taiseconds:
         intsec = np.floor(intset).astype(np.int64)
         fracsec = np.round(np.remainder(intsec,1)*self.FRAC_MULTIPLIER).astype(np.int64)
         obj.tai_seconds = np.zeros((fracsec.size,2),np.int64)
-        obj.tai_seconds[:,0] = intsec
+        obj.tai_seconds[:,0] = intsec + min_sec
         obj.tai_seconds[:,1] = fracsec
         return obj,si1[i1],si2[i2]
 
@@ -574,5 +629,124 @@ class taiseconds:
         obj.tai_seconds[:,0] = intsec
         obj.tai_seconds[:,1] = fracsec
         return obj,i1[si1],i2[si2]
+    
+    def append(self,to_append_obj):
+        """
+        append epochs froma nother teiseconds object
 
+        Parameters
+        ----------
+        to_append_obj : taiseconds object
 
+        Returns
+        -------
+        
+
+        """
+        if self.tai_seconds is None:
+            self.tai_seconds = to_append_obj.tai_seconds
+        else:
+            self.tai_seconds = np.vstack([self.tai_seconds, to_append_obj.tai_seconds])
+            
+    def __gt__(self, taisec_comp):
+        """
+        > operator
+        chek if taiseconds epochs are greater than taiseocnd single class
+
+        Parameters
+        ----------
+        taisec_comp : taiseconds dtae to be compared
+
+        Returns
+        -------
+        idx = index of greater dates
+        
+
+        """
+        return (self.tai_seconds[:,0] > (taisec_comp.tai_seconds[0,0]-1)) | ((self.tai_seconds[:,0] == taisec_comp.tai_seconds[0,0]) & (self.tai_seconds[:,1] > taisec_comp.tai_seconds[0,1]))
+
+    def __eq__(self, taisec_comp):
+        """
+        == operator
+        chek if taiseconds epochs are equal than taiseocnd single class
+
+        Parameters
+        ----------
+        taisec_comp : taiseconds dtae to be compared
+
+        Returns
+        -------
+        idx = index of equal dates
+        
+
+        """
+        return ((self.tai_seconds[:,0] == taisec_comp.tai_seconds[0,0]) & (self.tai_seconds[:,1] == taisec_comp.tai_seconds[0,1]))
+
+    def __ne__(self, taisec_comp):
+        """
+        != operator
+        chek if taiseconds epochs are not equal than taiseocnd single class
+
+        Parameters
+        ----------
+        taisec_comp : taiseconds dtae to be compared
+
+        Returns
+        -------
+        idx = index of not equal dates
+        
+
+        """
+        return ((self.tai_seconds[:,0] != taisec_comp.tai_seconds[0,0]) | (self.tai_seconds[:,1] != taisec_comp.tai_seconds[0,1]))
+
+    def __lt__(self, taisec_comp):
+        """
+        < operator
+        chek if taiseconds epochs are smaller than taiseocnd single class
+
+        Parameters
+        ----------
+        taisec_comp : taiseconds dtae to be compared
+
+        Returns
+        -------
+        idx = index of less than dates
+        
+
+        """
+        return (self.tai_seconds[:,0] < (taisec_comp.tai_seconds[0,0]+1)) | ((self.tai_seconds[:,0] == taisec_comp.tai_seconds[0,0]) & (self.tai_seconds[:,1] < taisec_comp.tai_seconds[0,1]))
+    
+    def __le__(self, taisec_comp):
+        """
+        <= operator
+        chek if taiseconds epochs are less than or equal  than taiseocnd single class
+
+        Parameters
+        ----------
+        taisec_comp : taiseconds dtae to be compared
+
+        Returns
+        -------
+        idx = index of less than or equal  dates
+        
+
+        """
+        return (self.tai_seconds[:,0] < (taisec_comp.tai_seconds[0,0]+1)) | ((self.tai_seconds[:,0] == taisec_comp.tai_seconds[0,0]) & (self.tai_seconds[:,1] <= taisec_comp.tai_seconds[0,1]))
+    
+    def __ge__(self, taisec_comp):
+        """
+        >= operator
+        chek if taiseconds epochs are greater or equal than taiseocnd single class
+
+        Parameters
+        ----------
+        taisec_comp : taiseconds dtae to be compared
+
+        Returns
+        -------
+        idx = index of greater or equal dates
+        
+
+        """
+        return (self.tai_seconds[:,0] > (taisec_comp.tai_seconds[0,0]-1)) | ((self.tai_seconds[:,0] == taisec_comp.tai_seconds[0,0]) & (self.tai_seconds[:,1] >= taisec_comp.tai_seconds[0,1]))
+    
