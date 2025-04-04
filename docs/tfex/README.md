@@ -60,7 +60,7 @@ One aim of TFEX is to provide flexibility on input and output timetags, providin
 # Example of TFEX file generated from a TSOFT output
 
 ```
-# TFEXVER = 0.2
+# TFEXVER = 0.3
 # PREFIX = { si = 'https://si-digital-framework.org/SI/units/'}
 # AUTHOR = BIPM
 # REFPOINTS = [
