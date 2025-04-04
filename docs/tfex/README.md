@@ -70,7 +70,7 @@ One aim of TFEX is to provide flexibility on input and output timetags, providin
 # COLUMNS = [
 #   {timetag = true, label = 'MJD', scale = 'utc', unit = 'si:day', format = '5d'},
 #   {timetag = true, label = 'SoD', scale = 'utc', unit = 'si:second', format = '5d'},
-#   {label = 'delta_t', label = 'link', trip = ['AB'], unit = 'si:nanosecond', format = '8.3f'},
+#   {label = 'delta_t', label = 'link', trip = ['B-A'], unit = 'si:nanosecond', format = '8.3f'},
 # ]
 # COMMENT = 
 60547   281   -1.421 
