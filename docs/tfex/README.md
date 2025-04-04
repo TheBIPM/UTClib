@@ -35,7 +35,7 @@ Strongly recommended:
 
 Optional:
 
-- DATESTART: a string (ISO format, see https://fr.wikipedia.org/wiki/ISO_8601) representing the start of the period covered by the file
+- DATESTART: a string (ISO format, see https://fr.wikipedia.org/wiki/ISO_8601, using the 'UTC' timezone, i.e. the string must end with the character 'Z') representing the start of the period covered by the file
 - DATESTOP: a string (ISO format) representing the end of the period covered by the file
 - NDATA: an integer representing the number of data points in the file
 - SAMPLING\_INTERVAL\_s: a float representing the sampling interval separating each data point, in second
