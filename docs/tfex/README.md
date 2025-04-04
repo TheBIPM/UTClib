@@ -62,7 +62,7 @@ One aim of TFEX is to provide flexibility on input and output timetags, providin
 ```
 # TFEXVER = 0.3
 # PREFIX = { si = 'https://si-digital-framework.org/SI/units/'}
-# AUTHOR = BIPM
+# AUTHOR = 'BIPM'
 # REFPOINTS = [
 #   { id = 'A', ts = 'Unknown', dev = 'OP3', type = 'GPSPPP'},
 #   { id = 'B', ts = 'Unknown', dev = 'PT3', type = 'GPSPPP'},
