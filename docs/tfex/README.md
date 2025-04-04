@@ -35,7 +35,7 @@ Strongly recommended:
 
 Optional:
 
-- MJDSTART: a float representing the start of the period covered by the file, in MJD (UTC tiem scale)
+- MJDSTART: a float representing the start of the period covered by the file, in MJD (UTC timescale)
 - MJDSTOP: a float representing the end of the period covered by the file, in MJD (UTC timescale)
 - NDATA: an integer representing the number of data points in the file
 - SAMPLING\_INTERVAL\_s: a float representing the sampling interval separating each data point, in second
