@@ -2,6 +2,7 @@ import argparse
 import os
 import logging
 import utclib.tfex as tfex
+import utclib.plot as tfp
 
 # Convert
 
@@ -86,3 +87,54 @@ def tfexdiff():
     interp = tf2.interpolate(tf1.timestamps)
     diff.write_to_file(args.output)
 
+
+# Basic plot of one or more time link(s)
+def get_parser_plot():
+    parser = argparse.ArgumentParser("Render simple plots of TFEX data files")
+    parser.add_argument("tfex_files",
+                        type=str,
+                        help=("Coma-separated list of TFEX files to include in "
+                              " plot"))
+    parser.add_argument('-o', '--offsets',
+                        help="Comma-separated list of offsets")
+    parser.add_argument('--median',
+                        action='store_true',
+                        help="Display a median-filtered curve")
+    parser.add_argument('--rebin',
+                        action='store_true',
+                        help="Display rebinned values")
+    parser.add_argument('--window_width',
+                        type=float,
+                        default=86400,
+                        help="Window width for filter (s)")
+    parser.add_argument('--show_average',
+                        action='append',
+                        type=str,
+                        help=("Calculate and draw a line showing average value"
+                              " over the indicate MJDDD.DDD:MJDDD.DDD range")
+                        )
+    parser.add_argument('--jump',
+                        action='append',
+                        type=str,
+                        help=("Signal a jump")
+                        )
+    return parser
+
+def tfexplot():
+    args = get_parser_plot().parse_args()
+    tfplot = tfp.Plot(stats=None)
+    if args.offsets:
+        offsets = [float(x) for x in args.offsets.split(',')]
+    for i, tfex_file in enumerate(args.tfex_files.split(',')):
+        tf = tfex.tfex.from_file(tfex_file)
+        if args.offsets:
+            offset_s = offsets[i]
+        else:
+            offset_s = 0
+        tfplot.add_link(tf, offset_s=offset_s, median=args.median,
+                        rebin=args.rebin,
+                        window_width=args.window_width,
+                        show_average=args.show_average,
+                        jumps=args.jump)
+    tfp.post_draw()
+    tfp.savefig()
