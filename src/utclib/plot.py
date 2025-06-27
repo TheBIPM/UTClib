@@ -9,28 +9,38 @@ from plotly.subplots import make_subplots
 log = logging.getLogger(__name__)
 
 
+# This should be generated from SIRP (or used directly ?)
 conv = {
-    "si:femtosecond": 1e-15,
-    "si:picosecond": 1e-12,
-    "si:nanosecond": 1e-9,
-    "si:microsecond": 1e-6,
-    "si:millisecond": 1e-3,
-    "si:second": 1,
-    "si:minute": 60,
-    "si:hour": 3600,
-    "si:day": 86400
+    "si:femtosecond": {'symbol': 'fs',
+                       'factor': 1e-15},
+    "si:picosecond": {'symbol': 'ps',
+                      'factor': 1e-12},
+    "si:nanosecond": {'symbol': 'ns',
+                      'factor': 1e-9},
+    "si:microsecond": {'symbol': 'µs',
+                       'factor': 1e-6},
+    "si:millisecond": {'symbol': 'ms',
+                       'factor': 1e-3},
+    "si:second": {'symbol': 's',
+                  'factor': 1},
+    "si:minute": {'symbol': 'mn',
+                  'factor': 60},
+    "si:hour": {'symbol': 'h',
+                'factor': 3600},
+    "si:day": {'symbol': 'd',
+               'factor': 86400},
     }
 
 
 class Plot():
-    def __init__(self, stats=None, unit="ns"):
+    def __init__(self, stats=None, unit="si:nanosecond"):
         self.stats = stats
         if stats:
             self.fig = make_subplots(rows=2, cols=1)
         else:
             self.fig = make_subplots(rows=1, cols=1)
-        self.unit = conv[unit]
-        self.unit_repr = unit
+        self.unit_factor = conv[unit]['factor']
+        self.unit_symbol = conv[unit]['symbol']
         self.content = []
 
     def add_link(self, tf, offset_s=0, median=False,
@@ -48,14 +58,14 @@ class Plot():
         data = tf.data[label]
         mjd = tf.timestamps.getMJD()
 
-        import ipdb;ipdb.set_trace()  # noqa
-        data_unit = float(conv(unit_str))
+        data_unit = float(conv[unit_str]['factor'])
         if offset_s != 0:
-            label += "({:+} {})".format(offset_s / self.unit, self.unit_repr)
+            label += "({:+} {})".format(offset_s / self.unit_factor,
+                                        self.unit_symbol)
         self.fig.add_trace(
             go.Scatter(
                 x=mjd,
-                y=(data * data_unit + offset_s) / self.unit,
+                y=(data * data_unit + offset_s) / self.unit_factor,
                 mode="markers",
                 name=label
             ),

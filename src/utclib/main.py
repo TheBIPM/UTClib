@@ -136,5 +136,5 @@ def tfexplot():
                         window_width=args.window_width,
                         show_average=args.show_average,
                         jumps=args.jump)
-    tfp.post_draw()
-    tfp.savefig()
+    tfplot.post_draw()
+    tfplot.savefig()
