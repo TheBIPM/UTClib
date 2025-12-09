@@ -4,7 +4,9 @@
 import utclib.tfex as tfex
 import numpy as np
 import re
+import logging
 
+logger = logging.getLogger(__name__)
 
 def hhmmss2d(hhmmss):
     hh = int(hhmmss[:2])
@@ -196,6 +198,9 @@ def parse_cggtts_file(filename):
     mjd = refsys_median['MJD'].astype(int).values
     sod = hhmmss2s(refsys_median['STTIME'].astype(int).values)
     val = refsys_median['REFSYS'].astype(int).values/10
+    if len(val) == 0:
+        logger.warning("Empty cggtts ? %s" % filename)
+        return None
     tf = tfex.tfex.from_arrays([
         (mjd,
          {'timetag': True,

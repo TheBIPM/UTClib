@@ -3,6 +3,7 @@ import os
 import logging
 import utclib.tfex as tfex
 import utclib.plot as tfp
+import utclib.converters as conv
 
 # Convert
 
@@ -19,7 +20,7 @@ def get_parser_conv():
     parser.add_argument(
         '-o', '--output',
         type=str,
-        help="output file (default : same with .tfex extension)"
+        help="output file (default : same with .tfex extension, in PWD)"
     )
     parser.add_argument(
         '-t', '--type',
@@ -29,22 +30,19 @@ def get_parser_conv():
 
 
 def tfexconv():
-    import utclib.converters as conv
     args = get_parser_conv().parse_args()
 
     if not args.output:
-        args.output = os.path.join(".",
-                                   os.path.splitext(args.input)[0] + ".tfex")
+        args.output = os.path.join(
+            ".",
+            os.path.basename(args.input) +
+            ".tfex")
     if args.type == "tsoft":
         tf = conv.parse_tsoft_file(args.input)
     elif args.type == "ippp":
         tf = conv.parse_ippp_tools_file(args.input)
     elif args.type == "cggtts":
         tf = conv.parse_cggtts_file(args.input)
-        args.output = os.path.join(
-            ".",
-            os.path.splitext(args.input)[0] +
-            "_{:05d}.tfex".format(tf.hdr.MJDSTART))
     else:
         logging.error("Unknown or unimplemented input type: %s" % args.type )
         raise SystemExit
@@ -93,7 +91,8 @@ def get_parser_plot():
     parser = argparse.ArgumentParser("Render simple plots of TFEX data files")
     parser.add_argument("tfex_files",
                         type=str,
-                        help=("Coma-separated list of TFEX files to include in "
+                        nargs='+',
+                        help=("List of TFEX files to include in "
                               " plot"))
     parser.add_argument('-o', '--offsets',
                         help="Comma-separated list of offsets")
@@ -125,7 +124,7 @@ def tfexplot():
     tfplot = tfp.Plot(stats=None)
     if args.offsets:
         offsets = [float(x) for x in args.offsets.split(',')]
-    for i, tfex_file in enumerate(args.tfex_files.split(',')):
+    for i, tfex_file in enumerate(args.tfex_files):
         tf = tfex.tfex.from_file(tfex_file)
         if args.offsets:
             offset_s = offsets[i]
