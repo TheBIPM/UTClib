@@ -197,7 +197,7 @@ class taiseconds:
         obj.tai_seconds[idx_leap,0] += 1
         return obj
 
-     @classmethod
+    @classmethod
     def fromGPSCalendar(self,years,months,days,hours,minutes,seconds):
         """ createthe object from a numpy array of calendar in gps time
         Parameters
@@ -807,4 +807,5 @@ class taiseconds:
 
         """
         return (self.tai_seconds[:,0] > (taisec_comp.tai_seconds[0,0]-1)) | ((self.tai_seconds[:,0] == taisec_comp.tai_seconds[0,0]) & (self.tai_seconds[:,1] >= taisec_comp.tai_seconds[0,1]))
+
     
