@@ -17,6 +17,7 @@ dependencies = [
     "numpy",
     "pytest",
     "plotly",
+    "toml",
 ]
 
 
