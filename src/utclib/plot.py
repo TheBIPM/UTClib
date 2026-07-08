@@ -2,6 +2,7 @@
 """
 import numpy as np
 import logging
+from pathlib import Path
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -128,9 +129,9 @@ class Plot():
         self.fig.update_layout(
             xaxis_tickformat = "%d")
 
-    def savefig(self, filename=None, **kwargs):
+    def savefig(self, filename:Path=None, **kwargs):
         if filename is None:
-            filename = "_".join(self.content) + ".html"
+            filename = Path("./tfexplot_output.html")
         self.fig.write_html(
             filename,
             config={"displaylogo": False,
