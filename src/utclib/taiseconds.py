@@ -25,7 +25,7 @@ class taiseconds:
 
     """
     FRAC_MULTIPLIER = 1e16
-    MJD_TAI0 = 36204                      # MJD of 1st Jan 1958 00h 00m 00s
+    MJD_TAI0 = np.int64(36204)     # MJD of 1st Jan 1958 00h 00m 00s
     CAL_TAI0 = [1958, 1, 1, 0, 0, 0]
     DATETIME64_TAI0 = np.datetime64('1958-01-01')
     UNIX_TAI0 = -378691200
@@ -118,7 +118,6 @@ class taiseconds:
         obj.tai_seconds[:,0] = (np.floor((mjd - obj.MJD_TAI0)*86400) +
                                 np.floor(sod))
         obj.tai_seconds[:,1] = np.round((sod%1)*self.FRAC_MULTIPLIER)
-
         obj.applyLeapSecond()
         return obj
 

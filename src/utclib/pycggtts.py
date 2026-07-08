@@ -522,11 +522,9 @@ class Cggtts():
                                np.nan])
             last_mjdfloat = mjdfloat
             # Exclude obviously wrong refsys values :
-            # - off by 100 ns from median
-            # - off by 1000 ns (abs)
-            group = group[np.abs(group.REFSYS) < 1000]
+            # - off by 1000 ns from median
             group_median = group['REFSYS'].median()
-            group = group[np.abs(group.REFSYS - group_median) < 100]
+            group = group[np.abs(group.REFSYS - group_median) < 1000]
             # Calculate value
             if group['sin2elv'].sum() != 0:
                 value = (group['REFSYS'].multiply(group['sin2elv']).sum() /
