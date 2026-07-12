@@ -4,34 +4,37 @@ A module that handles tfex header
 tfex header is supposed to be following TOML syntax
 
 A fixed set of parameters is allowed
+
+
 """
 
 import toml
 import logging
 
+# Any attempt to set an attribute outside of this list should result in a AttributeError
+valid_keywords_and_types={
+    'TFEXVER': str,
+    'MJDSTART': float,
+    'MJDSTOP': float,
+    'NDATA': int,
+    'PREFIX': dict,
+    'SAMPLING_INTERVAL_s': float,
+    'AVERAGING_WINDOW_s': float,
+    'MISSING_EPOCHS': bool,
+    'AUTHOR': str,
+    'DATE':str,
+    'REFPOINTS': list,
+    'COLUMNS': list,
+    'CONSTANT_DELAYS': list,
+    'COMMENT': str}
+
 class TfexHdrError(Exception):
     pass
 
 class tfexhdr:
+    __slots__ = valid_keywords_and_types.keys()
     def __init__(self):
-        self.valid_keywords_and_types={
-            'TFEXVER': str,
-            'MJDSTART': float,
-            'MJDSTOP': float,
-            'NDATA': int,
-            'PREFIX': dict,
-            'SAMPLING_INTERVAL_s': float,
-            'AVERAGING_WINDOW_s': float,
-            'MISSING_EPOCHS': bool,
-            'AUTHOR': str,
-            'DATE':str,
-            'REFPOINTS': list,
-            'COLUMNS': list,
-            'CONSTANT_DELAYS': list,
-            'COMMENT': str}
-        # This turns each keyword into an attribute of the class
-        for kw in self.valid_keywords_and_types.keys():
-            setattr(self, kw, None)
+        pass
 
     def read(self, filepath: str):
         """ Read header from a tfex file
@@ -57,12 +60,12 @@ class tfexhdr:
             logging.error("Cannot parse this header:\n%s" % toml_string)
             raise SystemExit
         for kw, value in parsed_toml.items():
-            if kw not in self.valid_keywords_and_types:
+            if kw not in valid_keywords_and_types:
                 raise TfexHdrError("Unauthorized keyword: %s" % kw)
             try:
                 # Update attribute while casting to proper type
                 setattr(self, kw,
-                        self.valid_keywords_and_types[kw](value))
+                        valid_keywords_and_types[kw](value))
             except (TypeError, ValueError):
                 raise TfexHdrError("Wrong type for %s" % kw)
 
@@ -79,8 +82,11 @@ class tfexhdr:
         """ return a string containing gfile header (with trailing #s)
         """
         hdr_lines = []
-        for kw in self.valid_keywords_and_types.keys():
-            val = getattr(self, kw)
+        for kw in valid_keywords_and_types.keys():
+            if hasattr(self, kw):
+                val = getattr(self, kw)
+            else:
+                continue
             if val is None:
                 continue
             if isinstance(val, list):
