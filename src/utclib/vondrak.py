@@ -4,152 +4,192 @@
 import numpy as np
 import logging
 
-def vondrak(hh: list[float], cvm: list[float], epsilon: float):
+def vondrak(x: list[float], y: list[float], epsilon: float):
     """
     Vondrak filter function
 
     Parameters
     ----------
-    hh: list[float]
+    x: list[float]
         a list of MJD dates
-    cvm: list[float]
+    y: list[float]
         link values at these dates
     epsilon: float
         The epsilon parameter
     """
 
-    ndat = len(hh)
+    ndat = len(x)
     ls = ndat - 3
     if ls <= 1:
         logging.warning("Vondrak failed: Ndat=%d" % ls)
         return
 
+    # Fortran convention used for numbering, row 0 not used, one additional
+    # element added on all dimensions
+    hh = np.zeros(ndat + 1)
+    hh[1:] = x
+    cvm = np.zeros(ndat + 1)
+    cvm[1:] = y
 
-    hh = np.array(hh)
-    cvm = np.array(cvm)
-    yl = np.zeros(ndat)
-    y = np.zeros(ndat)
-    w = np.zeros(ndat)
-    aa = np.zeros( (7, ndat) )
-    pp = np.zeros( (4, ndat+3) )
-    gx = np.zeros(4)
-    gk = np.zeros(4)
+    yl = np.zeros(ndat + 1)
+    y = np.zeros(ndat + 1)
+    w = np.zeros(ndat + 1)
+    aa = np.zeros( (8, ndat + 1) )
+    pp = np.zeros( (5, ndat + 4) )
+    gx = np.zeros(5)
+    gk = np.zeros(5)
 
     eps = epsilon/ls
-    sr = hh[-1] - hh[0]
-
-    for i in range(ls):
+    j = 3
+    sr = hh[-1] - hh[1]
+    for i in range(1, ls + 1):
         aux = 6 * np.sqrt(hh[i+2]-hh[i+1]) / np.sqrt(sr)
+        j += 1
+
         hh1 = (hh[i] - hh[i+1]) * (hh[i]-hh[i+2]) * (hh[i] - hh[i+3])
         hh2 = (hh[i+1] - hh[i]) * (hh[i+1]-hh[i+2]) * (hh[i+1] - hh[i+3])
         hh3 = (hh[i+2] - hh[i]) * (hh[i+2]-hh[i+1]) * (hh[i+2] - hh[i+3])
         hh4 = (hh[i+3] - hh[i]) * (hh[i+3]-hh[i+1]) * (hh[i+3] - hh[i+2])
 
-        pp[0, i+4] = aux/hh1
-        pp[1, i+4] = aux/hh2
-        pp[2, i+4] = aux/hh3
-        pp[3, i+4] = aux/hh4
+        pp[1, j] = aux/hh1
+        pp[2, j] = aux/hh2
+        pp[3, j] = aux/hh3
+        pp[4, j] = aux/hh4
 
     # Ajustement d'une parabole
-    for i in range(ndat):
+    for i in range(1, ndat + 1):
         x = hh[i]
         x2 = x*x
-        gx[0] += x
-        gx[1] += x2
-        gx[2] += x2 * x
-        gx[3] += x2 * x2
-        gk[2] += cvm[i]
-        gk[0] += cvm[i] * x
-        gk[1] += cvm[i] * x2
-    GPX2 = gx[1] - gx[0] * gx[0] / ndat
-    GPX3 = gx[2] - gx[0] * gx[1] / ndat
-    GPK1 = gk[0] - gk[2] * gx[0] / ndat
-    GPX4 = gx[3] - gx[1] * gx[1] / ndat
-    GPK2 = gk[1] - gk[2] * gx[1] / ndat
+        gx[1] += x
+        gx[2] += x2
+        gx[3] += x2 * x
+        gx[4] += x2 * x2
+        gk[3] += cvm[i]
+        gk[1] += cvm[i] * x
+        gk[2] += cvm[i] * x2
+    GPX2 = gx[2] - gx[1] * gx[1] / ndat
+    GPX3 = gx[3] - gx[1] * gx[2] / ndat
+    GPK1 = gk[1] - gk[3] * gx[1] / ndat
+    GPX4 = gx[4] - gx[2] * gx[2] / ndat
+    GPK2 = gk[2] - gk[3] * gx[2] / ndat
     H = (GPK2 - GPK1 * GPX3 / GPX2) / (GPX4 - GPX3 * GPX3 / GPX2)
     Q = (GPK1 - H * GPX3) / GPX2
-    V = (gk[2] - gx[1] * H - gx[0] * Q) / ndat
-    for i in range(ndat):
+    V = (gk[3] - gx[2] * H - gx[1] * Q) / ndat
+    for i in range(1, ndat+1):
         par = V + Q * hh[i] + H * hh[i] * hh[i]
-        w[i] = cvm[i] - par
-        # w[i] = eps * y[i]
-        aa[0,i] = pp[0,i] * pp[3,i]
-        aa[1,i] = pp[0,i+1] * pp[2,i+1] + pp[1,i] * pp[3,i]
-        aa[2,i] = (pp[0,i+2] * pp[1,i+2]
-                   + pp[1,i+1] * pp[2,i+1]
-                   + pp[2,i] * pp[3,i])
-        aa[3,i] = (eps
-                   + pp[0,i+3] * pp[0,i+3]
-                   + pp[1,i+2] * pp[1,i+2]
-                   + pp[2,i+1] * pp[2,i+1]
-                   + pp[3,i] * pp[3,i])
-        aa[4,i] = (pp[0,i+3] * pp[1,i+3]
-                   + pp[1,i+2] * pp[2,i+2]
-                   + pp[2,i+1]*pp[3,i+1])
-        aa[5,i] = pp[0,i+3] * pp[2,i+3] + pp[1,i+2] * pp[3,i+2]
-        aa[6,i] = pp[0,i+3] * pp[3,i+3]
-    # Resolution
-    i1 = 3
+        y[i] = cvm[i] - par
+        w[i] = eps * y[i]
+        aa[1,i] = pp[1,i] * pp[4,i]
+        aa[2,i] = pp[1,i+1] * pp[3,i+1] + pp[2,i] * pp[4,i]
+        aa[3,i] = (pp[1,i+2] * pp[2,i+2]
+                   + pp[2,i+1] * pp[3,i+1]
+                   + pp[3,i] * pp[4,i])
+        aa[4,i] = (eps
+                   + pp[1,i+3] * pp[1,i+3]
+                   + pp[2,i+2] * pp[2,i+2]
+                   + pp[3,i+1] * pp[3,i+1]
+                   + pp[4,i] * pp[4,i])
+        aa[5,i] = (pp[1,i+3] * pp[2,i+3]
+                   + pp[2,i+2] * pp[3,i+2]
+                   + pp[3,i+1]*pp[4,i+1])
+        aa[6,i] = pp[1,i+3] * pp[3,i+3] + pp[2,i+2] * pp[4,i+2]
+        aa[7,i] = pp[1,i+3] * pp[4,i+3]
+    # Resolution (following the  F314.for code, as modernized)
+    # This follows quite closely the instructions from Vondrak1969
+    j1 = 0
     nlim = ndat - 2
-    for j1 in range(nlim - 1):
-        i2 = 2
+    while (j1 != nlim - 1):
+        i1 = 4
+        j1 += 1
+        i2 = 3
         j2 = j1 + 1
-        while i2 != 0:
-            ls = i2 + 3
+        while (i2 != 0):
             coef = aa[i2, j2] / aa[i1, j1]
+            ls = i2 + 3
             il1 = 3
-            for il in range(i2, ls):
+            for il in range(i2, ls+1):
                 il1 += 1
                 aa[il, j2] = aa[il, j2] - aa[il1, j1] * coef
-            yl[j2] = yl[j2] - yl[j1] * coef
+            w[j2] = w[j2] - w[j1] * coef
             i2 -= 1
             j2 += 1
-
-    # "j1 == nlim" case in the Fortran code
-    j1 = nlim
-    i1 = 3
-    i2 = 2
-    j2 = j1 + 1
-    while i2 != 1:
-        ls = i2 + 3
+    i1 = 4
+    j1 = ndat - 2
+    i2 = 3
+    j2 = ndat - 1
+    while (i2 != 1):
+        ls = i2 + 2
         coef = aa[i2, j2] / aa[i1, j1]
         il1 = 3
-        for il in range(i2, ls):
+        for il in range(i2, ls + 1):
             il1 += 1
             aa[il, j2] = aa[il, j2] - aa[il1, j1] * coef
         w[j2] = w[j2] - w[j1] * coef
         i2 -= 1
         j2 += 1
     j1 = ndat - 1
-    coef = aa[2, ndat-1] / aa[3, j1]
-    aa[3, ndat-1] = aa[3, ndat-1] - aa[4, j1] * coef
-    w[-1] = w[-1] -  w[j1] * coef
-    yl[ndat - 1] = w[ndat-1] /  aa[3, ndat-1]
-    yl[j1] = (w[j1] - aa[4, j1] * yl[ndat - 1]) / aa[3, j1]
+    coef = aa[3, ndat - 1] / aa[4, j1]
+    aa[4, ndat] = aa[4, ndat] - aa[5, j1] * coef
+    w[ndat] = w[ndat] - w[j1]*coef
+    yl[ndat] = w[ndat] / aa[4, ndat]
+    yl[j1] = (w[j1] - aa[5, j1] * yl[ndat]) / aa[4, j1]
     j2 = ndat - 2
-    yl[j2] = (w[j2] - aa[4, j2] * yl[j1] - aa[5, j2] * yl[-1]) / aa[3, j2]
+    yl[j2] = (w[j2] - aa[5, j2] * yl[j1] - aa[6, j2] * yl[ndat]) / aa[4, j2]
     jl = ndat - 3
-    for j in range(jl):
-        ii = j2 - j - 2
-        yl[ii] = ((w[ii] - aa[4, ii]) * yl[ii + 1]
-                  - aa[5, ii] * yl[ii + 2]
-                  - aa[6, ii] * yl[ii + 3] / aa[3, ii])
+    for j in range(1, jl + 1):
+        ii = j2 - j
+        yl[ii] =(w[ii] - aa[5, ii] * yl[ii+1]
+                 - aa[6, ii] * yl[ii+2]
+                 - aa[7, ii] * yl[ii+3]) / aa[4, ii]
+    for i in range(1, ndat +1):
+        yl[i] = yl[i] + cvm[i] - y[i]
+    return yl[1:]
 
-    yl[i] += cvm[i] - y[i]
-    return yl
+
+
+def vondrak2(x: list[float], y: list[float], eps: float):
+    """ Rewrite using the original article's notations
+    """
+
+    x = np.array(x)
+    y = np.array(y)
+    n = len(x)
+    # a[i] (and b,c,d) = 0 outside of [1, n-3]
+    a = np.zeros(n)
+    b = np.zeros(n)
+    c = np.zeros(n)
+    d = np.zeros(n)
+
+    for i in range(1, n-3):
+        aux = 6 * np.sqrt(x[i+2] - x[i+1])
+        a[i] = aux / ((x[i] - x[i+1]) * (x[i] - x[i+2]) * (x[i] - x[i+3]))
+        b[i] = aux / ((x[i+1] - x[i]) * (x[i+1] - x[i+2]) * (x[i+1] - x[i+3]))
+        c[i] = aux / ((x[i+2] - x[i]) * (x[i+2] - x[i+1]) * (x[i+2] - x[i+3]))
+        d[i] = aux / ((x[i+3] - x[i]) * (x[i+3] - x[i+1]) * (x[i+3] - x[i+2]))
+
+    A = np.zeros( (7, n) )
+    A[0, 3:] = a[:-3] * d[:-3]
+    A[1, 3:] = a[1:-2] * c[1:-2] + b[:-3] * d[:-3]
+    A[2, 3:] = a[2:-1] * b[2:-1] + b[1:-2] * d[:-3]
+    A[3, 3:] = a[3:]**2 + b[2:-1]**2 + c[1:-2]**2 + d[:-3]**2
+    A[4, 3:] = a[3:] * b[3:] + b[2:-1] * c[2:-1]  + c[1:-2] * d[1:-2]
+    A[5, 3:] = a[3:] * c[3:] + b[2:-1] * d[2:-1]
+    A[6, 3:] = a[3:] * d[3:]
+
+    import ipdb;ipdb.set_trace()  # noqa
+
 
 if __name__ == "__main__":
-    import random
-    import matplotlib.pyplot as plt
-    random.seed()
 
-    hh = np.arange(61200, 61210, 0.1)
-    noise = np.array([2 * (random.random() - .5) for i in range(len(hh))])
-    cvm =  0.1 * (hh-hh[0])  + 0.7 * noise
+    import matplotlib.pyplot as plt
+    data = np.loadtxt("input_data.txt")
+    hh = data[:, 0].tolist()
+    cvm = data[:, 1].tolist()
     yl = vondrak(hh, cvm, .5)
-    print(cvm)
+
     fig,ax = plt.subplots()
     ax.plot(hh, cvm)
     ax.plot(hh, yl)
-
-    plt.show()
+    with open('output_python.txt', 'w') as fp:
+        for i in range(len(hh)):
+            fp.write('{:13.6f} {:10.3f} {:10.3f}\n'.format(hh[i], cvm[i], yl[i]))
