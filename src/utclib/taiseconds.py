@@ -416,7 +416,7 @@ class taiseconds:
             obj.tai_seconds[:,0] = intsec + ts0
             obj.tai_seconds[:,1] = fracsec
 
-            _,_,idx = obj.intersect(self)
+            _,idx,_ = obj.intersect(self)
             self.__dict__.update(obj.__dict__) # make self the newly created object
         else:
             idx = []

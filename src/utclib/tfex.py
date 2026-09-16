@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import numpy as np
 import re
+import copy
 
 from utclib.tabarray import tabarray
 from utclib.taiseconds import taiseconds
@@ -245,21 +246,38 @@ class tfex:
         """
         pass
 
-
-
-
     def join(self, tf2):
         """ add columns to the current tfex, taking values from tf2,
         interpolating data if needed"""
 
-    def datacol(self, col_name: str):
-        """ return the array corresponding to the requested data column (not timetag)"""
+    def getDataCol(self, col_name: str):
+        """ return the array corresponding to the 
+        requested data column (not timetag) and the index
+        in the `data` property"""
         column_names = [c[0] for c in [self.dtypes[i] for i in self.data_cols]]
         if col_name in column_names:
             ic = column_names.index(col_name)
-            return self.data[:,ic]
+            return self.data[:,ic], ic
         else:
             raise ValueError(f'Column `{col_name}` not found.')
+
+    def setDataCol(self, col: str|int, data):
+        """set `data` into the `col` column of the `data` property
+        `col` can be column name or integer index"""
+        if type(col) == str:
+            column_names = [c[0] for c in [self.dtypes[i] for i in self.data_cols]]
+            if col in column_names:
+                ic = column_names.index(col)
+                self.data[:,ic] = data
+            else:
+                raise ValueError(f'Column `{col}` not found.')
+        elif type(col) == int:
+            if col < len(self.data):
+                self.data[:,col] = data
+            else:
+                raise ValueError(f'Column index `{col}` out of bounds.')
+
+
 
     def regularize(self):
         """ add missing epochs into tfex data
@@ -283,6 +301,41 @@ class tfex:
             idx = []
 
         return idx
+
+    def movmean(self, col: str, wind: float, inplace=False):
+        """
+        Calculate the moving average of the column `col`
+        in the tfex data with window length `wind` seconds.
+        The window length will be truncated to an integer
+        number of data sampling rate.
+        Moving average is centered around the sample.
+        Data will first be regularized to insert any possible
+        gaps; if `inplace` then the tfex obj is modified and
+        return None, otherwise return new tfex obj.
+        NaNs will be ignored in the average computation of each window
+        """
+        
+        if inplace:
+            tf = self
+        else:
+            tf = self.copy()
+
+        tf.regularize()
+
+        arr, i = tf.getDataCol(col)
+        srate = getattr(self.hdr, 'SAMPLING_INTERVAL_s', None)
+        Nw = int(np.round(wind/srate))
+        if Nw % 2 == 0: Nw += 1 # odd number of samples to perfectly put the current sample in the middle of the window
+        # use convolution to perform moving average
+        arr_filled = np.nan_to_num(arr, nan=0.0)
+        valid_mask = (~np.isnan(arr)).astype(float)
+        kernel = np.ones(Nw)
+        rolling_sum = np.convolve(arr_filled, kernel, mode='same')
+        rolling_count = np.convolve(valid_mask, kernel, mode='same')
+        data_avg = rolling_sum / rolling_count
+        tf.setDataCol(i, data_avg)
+        setattr(tf.hdr, 'AVERAGING_WINDOW_s', wind)
+        return (None if inplace else tf)
 
     def __str__(self):
         """ create string that represent tfex object
@@ -309,4 +362,16 @@ class tfex:
             data_output.append(line)
 
         return "\n".join(data_output)
-    
+
+    def copy(self):
+        """Make a deep copy of the current tfex obj"""
+        new_tf = tfex()
+        new_tf.hdr = copy.deepcopy(self.hdr)
+        new_tf.flags  = copy.deepcopy(self.flags)
+        new_tf.data   = copy.deepcopy(self.data)
+        new_tf.timestamps = copy.deepcopy(self.timestamps)
+        new_tf.dtypes = copy.deepcopy(self.dtypes)
+        new_tf.ranges = copy.deepcopy(self.ranges)
+        new_tf.data_cols = copy.deepcopy(self.data_cols)
+        new_tf.ttag_cols = copy.deepcopy(self.ttag_cols)
+        return new_tf

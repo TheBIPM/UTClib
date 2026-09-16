@@ -19,12 +19,13 @@ class TestAccess:
 
     def test_correct_column(self):
         tf = tfex.tfex.from_file(p / 'test_data' / 'input.tfex')
-        assert(tf.datacol('delta_t').shape==(4,))
+        data, i = tf.getDataCol('delta_t')
+        assert(data.shape==(4,) and i==0)
 
     def test_wrong_column(self):
         tf = tfex.tfex.from_file(p / 'test_data' / 'input.tfex')
         with pytest.raises(ValueError):
-            tf.datacol('delta_t_blue')
+            tf.getDataCol('delta_t_blue')
 
 class TestOthers:
 
@@ -39,3 +40,8 @@ class TestOthers:
             and
             np.all(tf_mjdsod[1]==expected_sod)
         )
+
+    def test_movmean(self):
+        tf = tfex.tfex.from_file(p / 'test_data' / 'input_withgaps.tfex')
+        tf_new = tf.movmean(col='delta_t',wind=30)
+        
