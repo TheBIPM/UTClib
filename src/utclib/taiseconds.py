@@ -390,6 +390,40 @@ class taiseconds:
         return tai_sec, count > 1
 
 
+    def regularizeSampling(self,rate=None):
+        """ Regularize the array with sampling rate
+                Parameters
+                ----------
+                rate : rate of sampling in seconds, if none provided 
+                    will be the median rate of the time stamps
+        
+                Output
+                ----------
+                idx : index of the old array in the new array
+        
+        """
+        if len(self) > 1:
+            secfrommin, ts0 = self.getFromMinEpoch()
+            if not rate or np.isnan(rate):
+                rate = np.median(np.diff(secfrommin))
+            endt = np.round((secfrommin[-1]-secfrommin[0])/rate)*rate
+            new_array = np.arange(secfrommin[0],endt+rate,rate)
+
+            obj = taiseconds()
+            intsec = np.floor(new_array).astype(np.int64)
+            fracsec = np.round(np.remainder(new_array,1)*self.FRAC_MULTIPLIER).astype(np.int64)
+            obj.tai_seconds = np.zeros((fracsec.size,2),np.int64)
+            obj.tai_seconds[:,0] = intsec + ts0
+            obj.tai_seconds[:,1] = fracsec
+
+            _,_,idx = obj.intersect(self)
+            self.__dict__.update(obj.__dict__) # make self the newly created object
+        else:
+            idx = []
+
+        return idx
+
+
     def getMJD(self):
         """ get the MJD
         Parameters
@@ -564,7 +598,7 @@ class taiseconds:
 
         Returns
         -------
-        diff : numpy array of float with difference from the first epoch
+        diff : numpy array of float with difference from the first integer epoch
 
         """
 
@@ -807,4 +841,17 @@ class taiseconds:
         """
         return (self.tai_seconds[:,0] > (taisec_comp.tai_seconds[0,0]-1)) | ((self.tai_seconds[:,0] == taisec_comp.tai_seconds[0,0]) & (self.tai_seconds[:,1] >= taisec_comp.tai_seconds[0,1]))
 
+    def __len__(self):
+        """
+            len operator
+            get number of timestamps
+    
+    
+            Returns
+            -------
+            l = number of timestamps
+    
+    
+        """
+        return self.tai_seconds.shape[0]
 

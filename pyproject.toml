@@ -18,6 +18,7 @@ dependencies = [
     "pytest",
     "plotly",
     "toml",
+    "pandas>=2.3.3",
 ]
 
 

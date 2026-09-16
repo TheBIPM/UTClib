@@ -102,7 +102,11 @@ class tfex:
                         # take correct field, don't cast yet
                         val = line[start:end]
                         if val[-1] == "*":
-                            val = np.nan
+                            # add support for '*' in a int column
+                            if tfex_obj.dtypes[i][1] == np.int32:
+                                val = np.iinfo(np.int32).max
+                            else:
+                                val = np.nan
                     except IndexError:
                         val = np.nan
                     raw_cols[i].append(val)
@@ -211,6 +215,7 @@ class tfex:
             fp.write(self.hdr.write() + "\n")
             fp.write("\n".join(data_output))
 
+    # TODO
     def interpolate(self, timestamps, cols=None):
         """ Return the columns, interpolated according to the requested array
         of timestamps
@@ -225,12 +230,20 @@ class tfex:
         Returns
         utclib.tabarray()
         """
+        # if cols is None:
+        #     cols = self.data.dtype.names
 
-        if cols is None:
-            cols = self.data.dtype.names
+        # ndata = len(timestamps)
+        # data = tabarray(np.empty((ndata, ), dtype=dtypes_data))
+        pass
 
-        ndata = len(timestamps)
-        data = tabarray(np.empty((ndata, ), dtype=dtypes_data))
+    # TODO
+    def align(self, tfex2, algo=None):
+        """
+        Align the tfex object with `tfex2` object using a chosen
+        algorithm `algo` acting on the timetags
+        """
+        pass
 
 
 
@@ -239,4 +252,61 @@ class tfex:
         """ add columns to the current tfex, taking values from tf2,
         interpolating data if needed"""
 
+    def datacol(self, col_name: str):
+        """ return the array corresponding to the requested data column (not timetag)"""
+        column_names = [c[0] for c in [self.dtypes[i] for i in self.data_cols]]
+        if col_name in column_names:
+            ic = column_names.index(col_name)
+            return self.data[:,ic]
+        else:
+            raise ValueError(f'Column `{col_name}` not found.')
 
+    def regularize(self):
+        """ add missing epochs into tfex data
+        if MISSING_EPOCHS flag is set then this will do nothing;
+        if SAMPLING_INTERVAL_s flag is not set then the sampling
+            rate will be inferred from the data
+        
+        return index of old data in newly regularized data"""
+
+        MISSING_EPOCHS = getattr(self.hdr, 'MISSING_EPOCHS', None)
+        if MISSING_EPOCHS:
+            srate = getattr(self.hdr, 'SAMPLING_INTERVAL_s', None)
+            idx = self.timestamps.regularizeSampling(srate)
+
+            old_data = self.data.copy()
+            self.data = tabarray.empty(len(self.timestamps),old_data.dtype)
+            self.data[idx] = old_data
+           
+            setattr(self.hdr, 'MISSING_EPOCHS', False)
+        else:
+            idx = []
+
+        return idx
+
+    def __str__(self):
+        """ create string that represent tfex object
+            in a tabular fashion
+        """
+        raw_cols = []
+        # For now only support mjd/sod
+        mjds, sods = self.timestamps.getIntMJDSOD()
+        # store formats
+        fmts = []
+        for col in self.hdr.COLUMNS:
+            if col['label'] == 'MJD':
+                raw_cols.append(mjds.tolist())
+            elif col['label'] == 'SoD':
+                raw_cols.append(sods.tolist())
+            else:
+                raw_cols.append(self.data[col['label']].tolist())
+            fmts.append("{:" + col['format'] + "} ")
+        data_output = []
+        for i in range(len(raw_cols[0])):
+            line = ""
+            for j, col in enumerate(self.dtypes):
+                line += fmts[j].format(raw_cols[j][i])
+            data_output.append(line)
+
+        return "\n".join(data_output)
+    
