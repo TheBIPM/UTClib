@@ -250,16 +250,26 @@ class tfex:
         """ add columns to the current tfex, taking values from tf2,
         interpolating data if needed"""
 
-    def getDataCol(self, col_name: str):
-        """ return the array corresponding to the 
-        requested data column (not timetag) and the index
-        in the `data` property"""
-        column_names = [c[0] for c in [self.dtypes[i] for i in self.data_cols]]
-        if col_name in column_names:
-            ic = column_names.index(col_name)
-            return self.data[:,ic], ic
+    def getDataCol(self, col: str|int):
+        """ Return the array corresponding to the 
+        requested data column `col` and either the index
+        of `col` in the data property, or its name"""
+        if type(col) == str:
+            column_names = [c[0] for c in [self.dtypes[i] for i in self.data_cols]]
+            if col in column_names:
+                ic = column_names.index(col)
+                return self.data[:,ic], ic
+            else:
+                raise ValueError(f'Column `{col}` not found.')
+        elif type(col) == int:
+            if col < len(self.data):
+                col_name = self.data_cols[col][0]
+                return self.data[:,col], col_name
+            else:
+                raise ValueError(f'Column index `{col}` out of bounds.')
         else:
-            raise ValueError(f'Column `{col_name}` not found.')
+            raise NotImplementedError()
+
 
     def setDataCol(self, col: str|int, data):
         """set `data` into the `col` column of the `data` property
@@ -276,6 +286,8 @@ class tfex:
                 self.data[:,col] = data
             else:
                 raise ValueError(f'Column index `{col}` out of bounds.')
+        else:
+            raise NotImplementedError()
 
 
 
