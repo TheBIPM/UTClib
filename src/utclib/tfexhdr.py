@@ -70,7 +70,7 @@ class tfexhdr:
                 raise TfexHdrError("Wrong type for %s" % kw)
 
     def add_refpoint(self, rp_id=None, rp_ts=None, rp_dev=None, rp_type=None):
-        if self.REFPOINTS is None:
+        if not hasattr(self, "REFPOINTS"):
             self.REFPOINTS = []
         self.REFPOINTS.append(
             {'id': rp_id, 'ts': rp_ts, 'dev': rp_dev, 'type': rp_type})
