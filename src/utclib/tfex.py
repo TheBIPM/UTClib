@@ -29,6 +29,8 @@ type_conv = {"d": np.int32,
              "f": np.float64,
              "s": str}
 
+TFEX_VERSION = "0.0.1"
+
 class tfex:
     """
     A class to read write and manipulate time or frequency link using the tfex format
@@ -135,6 +137,7 @@ class tfex:
         """
         tfex_obj = self()
         ndata = len(input_data[0][0])
+        tfex_obj.hdr.TFEXVER = TFEX_VERSION
         tfex_obj.hdr.COLUMNS = []
         for arr, metadata in input_data:
             tfex_obj.hdr.COLUMNS.append(metadata)

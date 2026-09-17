@@ -25,7 +25,7 @@ class taiseconds:
 
     """
     FRAC_MULTIPLIER = 1e16
-    MJD_TAI0 = 36204                      # MJD of 1st Jan 1958 00h 00m 00s
+    MJD_TAI0 = np.int64(36204)     # MJD of 1st Jan 1958 00h 00m 00s
     CAL_TAI0 = [1958, 1, 1, 0, 0, 0]
     DATETIME64_TAI0 = np.datetime64('1958-01-01')
     UNIX_TAI0 = -378691200
@@ -85,11 +85,11 @@ class taiseconds:
 
         obj.applyLeapSecond()
         return obj
-    
+
     @classmethod
     def fromBesselianDate(self,bess_date):
         """ createthe object from a numpy array of besselian date
-        
+
         see: https://maia.usno.navy.mil/information/eo-values
         Parameters
         ----------
@@ -118,7 +118,6 @@ class taiseconds:
         obj.tai_seconds[:,0] = (np.floor((mjd - obj.MJD_TAI0)*86400) +
                                 np.floor(sod))
         obj.tai_seconds[:,1] = np.round((sod%1)*self.FRAC_MULTIPLIER)
-
         obj.applyLeapSecond()
         return obj
 
@@ -424,7 +423,7 @@ class taiseconds:
         mjd[sod == 86400] += 1
         sod[sod == 86400] = 0
         return (mjd, sod)
-    
+
     def getBesseliandate(self):
         """ get the Beseelian date
         Parameters
@@ -499,7 +498,7 @@ class taiseconds:
         Output
         ----------
         dates     : numpy array (nx1) datetime64
-        
+
         """
         years, months, days, hours, minutes, seconds = self.getCalendarDate()
         years = np.asarray(years) - 1970
@@ -687,7 +686,7 @@ class taiseconds:
         obj.tai_seconds[:,0] = intsec + min_sec
         obj.tai_seconds[:,1] = fracsec
         return obj,i1[si1],i2[si2]
-    
+
     def append(self,to_append_obj):
         """
         append epochs froma nother teiseconds object
@@ -698,14 +697,14 @@ class taiseconds:
 
         Returns
         -------
-        
+
 
         """
         if self.tai_seconds is None:
             self.tai_seconds = to_append_obj.tai_seconds
         else:
             self.tai_seconds = np.vstack([self.tai_seconds, to_append_obj.tai_seconds])
-            
+
     def __gt__(self, taisec_comp):
         """
         > operator
@@ -718,7 +717,7 @@ class taiseconds:
         Returns
         -------
         idx = index of greater dates
-        
+
 
         """
         return (self.tai_seconds[:,0] > (taisec_comp.tai_seconds[0,0]-1)) | ((self.tai_seconds[:,0] == taisec_comp.tai_seconds[0,0]) & (self.tai_seconds[:,1] > taisec_comp.tai_seconds[0,1]))
@@ -735,7 +734,7 @@ class taiseconds:
         Returns
         -------
         idx = index of equal dates
-        
+
 
         """
         return ((self.tai_seconds[:,0] == taisec_comp.tai_seconds[0,0]) & (self.tai_seconds[:,1] == taisec_comp.tai_seconds[0,1]))
@@ -752,7 +751,7 @@ class taiseconds:
         Returns
         -------
         idx = index of not equal dates
-        
+
 
         """
         return ((self.tai_seconds[:,0] != taisec_comp.tai_seconds[0,0]) | (self.tai_seconds[:,1] != taisec_comp.tai_seconds[0,1]))
@@ -769,11 +768,11 @@ class taiseconds:
         Returns
         -------
         idx = index of less than dates
-        
+
 
         """
         return (self.tai_seconds[:,0] < (taisec_comp.tai_seconds[0,0]+1)) | ((self.tai_seconds[:,0] == taisec_comp.tai_seconds[0,0]) & (self.tai_seconds[:,1] < taisec_comp.tai_seconds[0,1]))
-    
+
     def __le__(self, taisec_comp):
         """
         <= operator
@@ -786,11 +785,11 @@ class taiseconds:
         Returns
         -------
         idx = index of less than or equal  dates
-        
+
 
         """
         return (self.tai_seconds[:,0] < (taisec_comp.tai_seconds[0,0]+1)) | ((self.tai_seconds[:,0] == taisec_comp.tai_seconds[0,0]) & (self.tai_seconds[:,1] <= taisec_comp.tai_seconds[0,1]))
-    
+
     def __ge__(self, taisec_comp):
         """
         >= operator
@@ -803,9 +802,9 @@ class taiseconds:
         Returns
         -------
         idx = index of greater or equal dates
-        
+
 
         """
         return (self.tai_seconds[:,0] > (taisec_comp.tai_seconds[0,0]-1)) | ((self.tai_seconds[:,0] == taisec_comp.tai_seconds[0,0]) & (self.tai_seconds[:,1] >= taisec_comp.tai_seconds[0,1]))
 
-    
+
