@@ -233,6 +233,61 @@ def parse_cggtts_file(filename):
     tf.hdr.COMMENT = ""
     return tf
 
+def parse_ppp_file(fname,devname=''):
+    """ Convert the Circt PPP solutions into a TFEX object
+   """
+    rows = []
+    with open(fname) as f:
+        for line in f:
+            parts = line.split()
+            try:
+                rows.append([float(x) for x in parts])
+            except ValueError:
+                continue
+    
+    data = np.array(rows)
+    
+    mjd = np.floor(data[:,0])
+    sod = np.remainder(data[:,0],1)*86400
+    
+    
+    
+    tf = tfex.tfex.from_arrays([
+        (mjd,
+         {'timetag': True,
+          'label': 'MJD',
+          'scale': 'utc',
+          'unit': 'si:day',
+          'format': '5d'}),
+        (sod,
+         {'timetag': True,
+          'label': 'SoD',
+          'scale': 'utc',
+          'unit': 'si:second',
+          'format': '5d'}),
+        (data[:,1],
+         {'label': 'delta_t',
+          'trip': ['AB'],
+          'unit': 'si:nanosecond',
+          'format': '8.3f'}),
+        (data[:,2],
+         {'label': 'uncertanty',
+          'unit': 'si:nanosecond',
+          'format': '8.3f'}),
+        (data[:,3],
+         {'label': 'numsat',
+          'unit': 'si:nanosecond',
+          'format': '8d'}),
+    ])
+    tf.hdr.TFEXVER = "0.2"
+    tf.hdr.PREFIX = {'si': 'https://si-digital-framework.org/SI/units/'}
+    tf.hdr.AUTHOR = "BIPM"
+    tech="PPP"
+    tf.hdr.add_refpoint(rp_id="A", rp_ts="Unknown", rp_dev=devname, rp_type=tech)
+    tf.hdr.add_refpoint(rp_id="B", rp_ts="Post Processed GNSS timescale", rp_dev="")
+    tf.hdr.COMMENT = ""
+    return tf
+       
 
 
 
