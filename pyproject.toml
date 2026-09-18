@@ -18,7 +18,6 @@ dependencies = [
     "pytest",
     "plotly",
     "toml",
-    "pandas>=2.3.3",
     "allantools>=2024.6",
 ]
 
@@ -35,6 +34,11 @@ tfexplot = "utclib.main:tfexplot"
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",
+]
+
+[dependency-groups]
+dev = [
+    "pandas>=2.3.3",
 ]
 
 

@@ -11,26 +11,8 @@ log = logging.getLogger(__name__)
 
 
 # This should be generated from SIRP (or used directly ?)
-conv = {
-    "si:femtosecond": {'symbol': 'fs',
-                       'factor': 1e-15},
-    "si:picosecond": {'symbol': 'ps',
-                      'factor': 1e-12},
-    "si:nanosecond": {'symbol': 'ns',
-                      'factor': 1e-9},
-    "si:microsecond": {'symbol': 'µs',
-                       'factor': 1e-6},
-    "si:millisecond": {'symbol': 'ms',
-                       'factor': 1e-3},
-    "si:second": {'symbol': 's',
-                  'factor': 1},
-    "si:minute": {'symbol': 'mn',
-                  'factor': 60},
-    "si:hour": {'symbol': 'h',
-                'factor': 3600},
-    "si:day": {'symbol': 'd',
-               'factor': 86400},
-    }
+from utclib.prefix import UNITS
+conv = UNITS['time']
 
 
 class Plot():
