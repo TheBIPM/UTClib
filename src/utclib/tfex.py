@@ -20,10 +20,13 @@ import numpy as np
 import re
 import copy
 from typing import Self
+from warnings import warn
 
 from utclib.tabarray import tabarray
 from utclib.taiseconds import taiseconds
 from utclib.tfexhdr import tfexhdr, UNITS
+
+import allantools
 
 # Regex for parsing format string
 p = re.compile(r"(?P<fill>0?)(?P<width>\d+)\.?(?P<prec>\d*)(?P<type>[dfs])")
@@ -464,6 +467,74 @@ class tfex:
 
         return tfex_out
 
+    def adev(self, col: str|int = 0, **kwargs):
+        """Wrapper on allantools.gradev for the data column `col` (column name or integer index).
+        `kwargs`: other keywords argument to allantools.gradev other than `data` and `rate`, e.g. taus=...
+        """
+        # check sampling rate
+        srate = getattr(self.hdr,'SAMPLING_INTERVAL_s', None)
+        if not srate:
+            raise NotImplementedError('No info on sampling rate.')
+        # check data unit
+        data, c = self.getDataCol(col)
+        ic = c if type(col)==str else col
+        data_colspec = self.hdr.COLUMNS[self.data_cols[ic]]
+        unit = data_colspec['unit']
+        if unit not in UNITS['time']:
+            raise NotImplementedError('method is only used on phase time data')
+        factor = UNITS['time'][unit]['factor']
+        # preliminary check on number of points
+        if self.data.shape[0] < 3:
+            raise ValueError('not enough data')
+        # regularize data just in case
+        self.regularize()
+        # extract requested data
+        data,_ = self.getDataCol(col)
+        return allantools.gradev(data=data*factor, rate=1/srate, **kwargs)
+
+    def mdev(self, col: str|int = 0, **kwargs):
+        """Wrapper on allantools.mdev for the data column `col` (column name or integer index).
+        `kwargs`: other keywords argument to allantools.gradev other than `data` and `rate`, e.g. taus=...
+        """
+        # check sampling rate
+        srate = getattr(self.hdr,'SAMPLING_INTERVAL_s', None)
+        if not srate:
+            raise NotImplementedError('No info on sampling rate.')
+        # check data unit
+        data, c = self.getDataCol(col)
+        ic = c if type(col)==str else col
+        data_colspec = self.hdr.COLUMNS[self.data_cols[ic]]
+        unit = data_colspec['unit']
+        if unit not in UNITS['time']:
+            raise NotImplementedError('method is only used on phase time data')
+        factor = UNITS['time'][unit]['factor']
+        # preliminary check on number of points
+        if self.data.shape[0] < 3:
+            raise ValueError('not enough original data')
+        # regularize data just in case
+        self.regularize()
+        # extract requested data
+        data,_ = self.getDataCol(col)
+        ts = self.timestamps.tai_seconds
+        ts = ts[:,0] + ts[:,1]/taiseconds.FRAC_MULTIPLIER
+        # find missing data and fill
+        idx_nonnan = np.where(~np.isnan(data))[0]
+        idx_nan = np.where(np.isnan(data))[0]
+        if len(idx_nan)/data.shape[0] > 0.2:
+            warn(r'more than 20% of data is missing')
+        if idx_nan.any() and idx_nonnan.any():
+            data[idx_nan] = np.interp(ts[idx_nan],ts[idx_nonnan],data[idx_nonnan],left=np.nan,right=np.nan)
+            idx_nonnan = np.where(~np.isnan(data))[0]
+            idx_nan = np.where(np.isnan(data))[0]
+        if idx_nonnan.any():
+            # trim nans from left and right
+            data = data[idx_nonnan[0]:idx_nonnan[-1]+1]
+            ts = ts[idx_nonnan[0]:idx_nonnan[-1]+1]
+        if not data.size:
+            raise ValueError('not enough data')
+
+        return allantools.mdev(data=data*factor, rate=1/srate, **kwargs)
+        
     def __str__(self):
         """ create string that represent tfex object
             in a tabular fashion

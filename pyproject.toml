@@ -19,6 +19,7 @@ dependencies = [
     "plotly",
     "toml",
     "pandas>=2.3.3",
+    "allantools>=2024.6",
 ]
 
 
