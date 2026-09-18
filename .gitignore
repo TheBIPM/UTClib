@@ -1,3 +1,4 @@
 .python-version
 src/utclib.egg-info/
 __pycache__
+.vscode

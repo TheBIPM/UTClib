@@ -28,6 +28,8 @@ valid_keywords_and_types={
     'CONSTANT_DELAYS': list,
     'COMMENT': str}
 
+from utclib.prefix import UNITS
+
 class TfexHdrError(Exception):
     pass
 
@@ -102,7 +104,16 @@ class tfexhdr:
 def toml_repr(val):
     # Adjust representation of python types in TOML to keep inline dicts
     if isinstance(val, str):
-        return "'" + val + "'"
+        mystr = ''
+        if '\n' in val:
+            for il, line in enumerate(val.splitlines()):
+                if il==0:
+                    mystr += '"""' + '\n'
+                mystr += '# ' + line + '\n'
+            mystr += '# ' + '"""'
+        else:
+            mystr = "'" + val + "'"
+        return mystr
     elif isinstance(val, dict):
         out = "{"
         for key, v in val.items():
