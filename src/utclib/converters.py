@@ -287,6 +287,52 @@ def parse_ppp_file(fname,devname=''):
     tf.hdr.add_refpoint(rp_id="B", rp_ts="Post Processed GNSS timescale", rp_dev="")
     tf.hdr.COMMENT = ""
     return tf
+
+def parse_ELSTAB_file(fname):
+    """ Convert an AOS GUM ELSTAB file in ns to TFEX
+   """
+    rows = []
+    with open(fname) as f:
+        for line in f:
+            parts = line.split()
+            try:
+                rows.append([float(x) for x in parts])
+            except ValueError:
+                continue
+    
+    data = np.array(rows)
+    
+    mjd = data[:,0].astype(int)
+    sod = np.remainder(data[:,1],100) + np.remainder(np.floor(data[:,1]/100),100)*60 + np.floor(data[:,1]/10000)*3600
+    
+    
+    
+    tf = tfex.tfex.from_arrays([
+        (mjd,
+         {'timetag': True,
+          'label': 'MJD',
+          'scale': 'utc',
+          'unit': 'si:day',
+          'format': '5d'}),
+        (sod,
+         {'timetag': True,
+          'label': 'SoD',
+          'scale': 'utc',
+          'unit': 'si:second',
+          'format': '5d'}),
+        (data[:,2],
+         {'label': 'delta_t',
+          'trip': ['AB'],
+          'unit': 'si:nanosecond',
+          'format': '10.3f'}),
+    ])
+    tf.hdr.TFEXVER = "0.2"
+    tf.hdr.PREFIX = {'si': 'https://si-digital-framework.org/SI/units/'}
+    tf.hdr.AUTHOR = "BIPM"
+    tf.hdr.add_refpoint(rp_id="A", rp_ts="Unknown")
+    tf.hdr.add_refpoint(rp_id="B", rp_ts="Unknown")
+    tf.hdr.COMMENT = ""
+    return tf
        
 
 
