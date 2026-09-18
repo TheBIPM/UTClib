@@ -19,10 +19,11 @@ import logging
 import numpy as np
 import re
 import copy
+from typing import Self
 
 from utclib.tabarray import tabarray
 from utclib.taiseconds import taiseconds
-import utclib.tfexhdr as tfexhdr
+from utclib.tfexhdr import tfexhdr, UNITS
 
 # Regex for parsing format string
 p = re.compile(r"(?P<fill>0?)(?P<width>\d+)\.?(?P<prec>\d*)(?P<type>[dfs])")
@@ -38,7 +39,7 @@ class tfex:
 
     """
     def __init__(self):
-        self.hdr = tfexhdr.tfexhdr()
+        self.hdr = tfexhdr()
         # Content
         self.flags  = []        # List of possible flags
         self.data   = None      # tabarray object containing the data
@@ -72,14 +73,14 @@ class tfex:
 
 
     @classmethod
-    def from_file(self,file_path):
+    def from_file(cls,file_path):
         """create tfex object from file
         Parameters
         ----------
         file_path : str
             file path of the tfex file
         """
-        tfex_obj = self()
+        tfex_obj = cls()
         # First load header and parse the description of the columns
         tfex_obj.hdr.read(file_path)
         tfex_obj.parse_dtypes()
@@ -132,7 +133,7 @@ class tfex:
 
 
     @classmethod
-    def from_arrays(self, input_data: list):
+    def from_arrays(cls, input_data: list):
         """create tfex object from existing numpy arrays
         Parameters
         ----------
@@ -140,7 +141,7 @@ class tfex:
             a numpy list containing arrays and their metadata (COLUMNS dict
             content)
         """
-        tfex_obj = self()
+        tfex_obj = cls()
         ndata = len(input_data[0][0])
         tfex_obj.hdr.TFEXVER = TFEX_VERSION
         tfex_obj.hdr.COLUMNS = []
@@ -246,6 +247,7 @@ class tfex:
         """
         pass
 
+    # TODO
     def join(self, tf2):
         """ add columns to the current tfex, taking values from tf2,
         interpolating data if needed"""
@@ -263,7 +265,7 @@ class tfex:
                 raise ValueError(f'Column `{col}` not found.')
         elif type(col) == int:
             if col < len(self.data):
-                col_name = self.data_cols[col][0]
+                col_name = self.dtypes[self.data_cols[col]][0]
                 return self.data[:,col], col_name
             else:
                 raise ValueError(f'Column index `{col}` out of bounds.')
@@ -348,6 +350,119 @@ class tfex:
         tf.setDataCol(i, data_avg)
         setattr(tf.hdr, 'AVERAGING_WINDOW_s', wind)
         return (None if inplace else tf)
+
+    #TODO
+    @classmethod
+    def diff(cls, tfex1: Self, tfex2: Self, col1: int|str = 0, col2: int|str = 0, align_on_right: bool = False, col_label=None):
+        """
+        Calculate `tfex1` MINUS `tfex2` on selected columns.
+        By default:
+        - First data column will be considered for both objs; otherwise specify `col1` and/or `col2`, by either column name or integer index.
+        - Timestamps of `tfex1` is used as reference  (`align_on_right`=False), otherwise use that of `tfex2` (`align_on_right`=True). Linear interpolation is used to match the data of the other tfex on the reference tfex.
+        - `col_label` if not set will be f'{label1}-{label2}' as the output data column. 
+        If both column has the `trip` metadata, then merge these metadata.
+        
+        """
+
+        # Retrieve the selected data column
+        data1, c1 = tfex1.getDataCol(col1)
+        data2, c2 = tfex2.getDataCol(col2)
+
+        # Retrieve column metadata
+        ic1 = c1 if type(col1)==str else col1
+        data1_colspec = tfex1.hdr.COLUMNS[tfex1.data_cols[ic1]]
+        ic2 = c2 if type(col2)==str else col2
+        data2_colspec = tfex2.hdr.COLUMNS[tfex2.data_cols[ic2]]
+
+        # Retrieve data unit to scale properly before making difference
+        unit1 = data1_colspec['unit']
+        unit2 = data2_colspec['unit']
+        if (unit1 in UNITS['time']) and (unit2 in UNITS['time']):
+            factor1 = UNITS['time'][unit1]['factor']
+            factor2 = UNITS['time'][unit2]['factor']
+        else:
+            raise NotImplementedError('method is only used to calculate time difference')
+
+        # Retrieve the timestamps in float TAI seconds
+        ts1 = tfex1.timestamps.tai_seconds
+        t1 = ts1[:,0] + ts1[:,1]/taiseconds.FRAC_MULTIPLIER
+        ts2 = tfex2.timestamps.tai_seconds
+        t2 = ts2[:,0] + ts2[:,1]/taiseconds.FRAC_MULTIPLIER
+
+        # Interpolate 
+        if align_on_right:
+            xp = t1
+            fp = data1
+            x = t2
+            data1_int = np.interp(x,xp,fp,left=np.nan,right=np.nan)
+            data1 = data1_int
+            factor_common = factor2
+        else:
+            xp = t2
+            fp = data2
+            x = t1
+            data2_int = np.interp(x,xp,fp,left=np.nan,right=np.nan)
+            data2 = data2_int
+            factor_common = factor1
+
+        # Difference
+        data = (data1*factor1 - data2*factor2)/factor_common
+
+        # Construct output tfex
+        # get the data column metadata
+        trip1 = data1_colspec.get('trip',[])
+        trip2 = data2_colspec.get('trip',[])
+        data_colspec = copy.deepcopy(data2_colspec) if align_on_right else copy.deepcopy(data1_colspec)
+        # merge trip details
+        if trip1 or trip2:
+            data_colspec['trip'] = trip1 + trip2
+        # determine column label
+        if not col_label:
+            col_label = f'{data1_colspec['label']}-{data2_colspec['label']}'
+        data_colspec['label'] = col_label
+        # get timestamps
+        mjd_sod = tfex2.timestamps.getIntMJDSOD() if align_on_right else tfex1.timestamps.getIntMJDSOD()
+        # make the tfex object from timestamps and data array
+        #TODO here the format of SoD should be matching the resolution of the reference tfex
+        tfex_out = tfex.from_arrays([
+            (mjd_sod[0], dict(timetag=True, label='MJD', scale='TAI', unit = 'si:day', format='5d')),
+            (mjd_sod[1], dict(timetag=True, label='SoD', scale='TAI', unit = 'si:second', format='8.3f')),
+            (data, data_colspec)
+        ])
+        # merge any comments
+        comment1 = getattr(tfex1.hdr,'COMMENT', '')
+        comment2 = getattr(tfex2.hdr,'COMMENT', '')
+        if comment1 and comment2:
+            comment = comment1 + '\n' + comment2
+        elif comment1:
+            comment = comment1
+        elif comment2:
+            comment = comment2
+        else:
+            comment = None
+        # merge refpoints
+        refpoints1 = getattr(tfex1.hdr,'REFPOINTS',[])
+        refpoints2 = getattr(tfex2.hdr,'REFPOINTS',[])
+        if refpoints1 or refpoints2:
+            refpoints = refpoints1 + refpoints2
+        else:
+            refpoints = None
+        # merge constant_delays
+        constantdelays1 = getattr(tfex1.hdr,'CONSTANT_DELAYS',[])
+        constantdelays2 = getattr(tfex2.hdr,'CONSTANT_DELAYS',[])
+        if constantdelays1 or constantdelays2:
+            constantdelays = constantdelays1 + constantdelays2
+        else:
+            constantdelays = None
+        # set extra metadata
+        if comment:
+            setattr(tfex_out.hdr, 'COMMENT', comment)
+        if refpoints:
+            setattr(tfex_out.hdr, 'REFPOINTS', refpoints)
+        if constantdelays:
+            setattr(tfex_out.hdr, 'CONSTANT_DELAYS', constantdelays)
+
+        return tfex_out
 
     def __str__(self):
         """ create string that represent tfex object

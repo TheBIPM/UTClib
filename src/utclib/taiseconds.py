@@ -71,23 +71,23 @@ class taiseconds:
 
 
     @classmethod
-    def fromMJD(self,mjd):
+    def fromMJD(cls,mjd):
         """ createthe object from a numpy array of MJDs
         Parameters
         ----------
         mjd : numpy array (nx1)  MJDS
 
         """
-        obj = self()
+        obj = cls()
         obj.tai_seconds = np.zeros((len(mjd),2),np.int64)
         obj.tai_seconds[:,0] = np.floor((mjd - obj.MJD_TAI0)*86400)
-        obj.tai_seconds[:,1] = np.round(np.remainder((mjd - obj.MJD_TAI0)*86400,1)*self.FRAC_MULTIPLIER)
+        obj.tai_seconds[:,1] = np.round(np.remainder((mjd - obj.MJD_TAI0)*86400,1)*cls.FRAC_MULTIPLIER)
 
         obj.applyLeapSecond()
         return obj
 
     @classmethod
-    def fromBesselianDate(self,bess_date):
+    def fromBesselianDate(cls,bess_date):
         """ createthe object from a numpy array of besselian date
 
         see: https://maia.usno.navy.mil/information/eo-values
@@ -96,16 +96,16 @@ class taiseconds:
         bess_date : numpy array (nx1)  besselian dates
 
         """
-        obj = self()
+        obj = cls()
         mjd = (bess_date - 2000)*365.2422 + 51544.03
         obj.tai_seconds = np.zeros((len(mjd),2),np.int64)
         obj.tai_seconds[:,0] = np.floor((mjd - obj.MJD_TAI0)*86400)
-        obj.tai_seconds[:,1] = np.round(np.remainder((mjd - obj.MJD_TAI0)*86400,1)*self.FRAC_MULTIPLIER)
+        obj.tai_seconds[:,1] = np.round(np.remainder((mjd - obj.MJD_TAI0)*86400,1)*cls.FRAC_MULTIPLIER)
 
         obj.applyLeapSecond()
         return obj
     @classmethod
-    def fromMJDSoD(self, mjd, sod):
+    def fromMJDSoD(cls, mjd, sod):
         """ create the object from a numpy array of MJDs + numpy array of Sod
         Parameters
         ----------
@@ -113,33 +113,33 @@ class taiseconds:
         sod : numpy array (nx1)  Second of days
 
         """
-        obj = self()
+        obj = cls()
         obj.tai_seconds = np.zeros((len(mjd),2),np.int64)
         obj.tai_seconds[:,0] = (np.floor((mjd - obj.MJD_TAI0)*86400) +
                                 np.floor(sod))
-        obj.tai_seconds[:,1] = np.round((sod%1)*self.FRAC_MULTIPLIER)
+        obj.tai_seconds[:,1] = np.round((sod%1)*cls.FRAC_MULTIPLIER)
         obj.applyLeapSecond()
         return obj
 
     @classmethod
-    def fromUnixTime(self,unixsecond):
+    def fromUnixTime(cls,unixsecond):
         """ createthe object from a numpy array of unix time
         Parameters
         ----------
         unixsecond : numpy array (nx1) non leap second elapsed since 1 1 1970
 
         """
-        obj = self()
+        obj = cls()
         obj.tai_seconds = np.zeros((len(unixsecond),2),np.int64)
         obj.tai_seconds[:,0] = np.floor(unixsecond - obj.UNIX_TAI0)
-        obj.tai_seconds[:,1] = np.round(np.remainder(unixsecond,1)*self.FRAC_MULTIPLIER)
+        obj.tai_seconds[:,1] = np.round(np.remainder(unixsecond,1)*cls.FRAC_MULTIPLIER)
 
         obj.applyLeapSecond()
         return obj
 
 
     @classmethod
-    def fromUTCCalendar(self,years,months,days,hours,minutes,seconds):
+    def fromUTCCalendar(cls,years,months,days,hours,minutes,seconds):
         """ createthe object from a numpy array of MJDs
         Parameters
         ----------
@@ -161,7 +161,7 @@ class taiseconds:
         #       return
 
 
-        obj = self()
+        obj = cls()
         seconds = np.asarray(seconds)
 
         idx_leap = seconds >= 60
@@ -187,7 +187,7 @@ class taiseconds:
         obj.tai_seconds = np.zeros((years.size,2),np.int64)
         timedelta = npdate - obj.DATETIME64_TAI0
         obj.tai_seconds[:,0] = timedelta.astype('timedelta64[s]').astype(np.int64)
-        obj.tai_seconds[:,1] = np.round(frac_seconds*self.FRAC_MULTIPLIER)
+        obj.tai_seconds[:,1] = np.round(frac_seconds*cls.FRAC_MULTIPLIER)
 
 
 
@@ -197,7 +197,7 @@ class taiseconds:
         return obj
 
     @classmethod
-    def fromGPSCalendar(self,years,months,days,hours,minutes,seconds):
+    def fromGPSCalendar(cls,years,months,days,hours,minutes,seconds):
         """ createthe object from a numpy array of calendar in gps time
         Parameters
         ----------
@@ -219,7 +219,7 @@ class taiseconds:
         #       return
 
 
-        obj = self()
+        obj = cls()
         seconds = np.asarray(seconds)
 
 
@@ -242,7 +242,7 @@ class taiseconds:
         obj.tai_seconds = np.zeros((years.size,2),np.int64)
         timedelta = npdate - obj.DATETIME64_TAI0
         obj.tai_seconds[:,0] = timedelta.astype('timedelta64[s]').astype(np.int64)
-        obj.tai_seconds[:,1] = np.round(frac_seconds*self.FRAC_MULTIPLIER)
+        obj.tai_seconds[:,1] = np.round(frac_seconds*cls.FRAC_MULTIPLIER)
         obj.tai_seconds[:,0] += obj.DSEC_TAIGPS
 
 
@@ -252,7 +252,7 @@ class taiseconds:
         return obj
 
     @classmethod
-    def fromGPSWeekSow(self,week,sow):
+    def fromGPSWeekSow(cls,week,sow):
         """ createthe object from a numpy array of MJDs
         Parameters
         ----------
@@ -260,19 +260,19 @@ class taiseconds:
         sow  : numpy array (nx) second of the week
 
         """
-        obj = self()
+        obj = cls()
         week = np.asarray(week)
         sow = np.asarray(sow)
         nep = week.size
 
         obj.tai_seconds = np.zeros((nep,2),np.int64)
-        obj.tai_seconds[:,0] = self.TAISEC_GPS0 + week.astype(np.int64)*86400*7 + np.floor(sow).astype(np.int64)
-        obj.tai_seconds[:,1] = (np.remainder(sow,1)*self.FRAC_MULTIPLIER).astype(np.int64)
+        obj.tai_seconds[:,0] = cls.TAISEC_GPS0 + week.astype(np.int64)*86400*7 + np.floor(sow).astype(np.int64)
+        obj.tai_seconds[:,1] = (np.remainder(sow,1)*cls.FRAC_MULTIPLIER).astype(np.int64)
 
         return obj
 
     @classmethod
-    def fromGALWeekSow(self,week,sow):
+    def fromGALWeekSow(cls,week,sow):
         """ createthe object from a numpy array of MJDs
         Parameters
         ----------
@@ -280,19 +280,19 @@ class taiseconds:
         sow  : numpy array (nx) second of the week
 
         """
-        obj = self()
+        obj = cls()
         week = np.asarray(week)
         sow = np.asarray(sow)
         nep = week.size
 
         obj.tai_seconds = np.zeros((nep,2),np.int64)
-        obj.tai_seconds[:,0] = self.TAISEC_GAL0 + week.astype(np.int64)*86400*7 + np.floor(sow).astype(np.int64)
-        obj.tai_seconds[:,1] = (np.remainder(sow,1)*self.FRAC_MULTIPLIER).astype(np.int64)
+        obj.tai_seconds[:,0] = cls.TAISEC_GAL0 + week.astype(np.int64)*86400*7 + np.floor(sow).astype(np.int64)
+        obj.tai_seconds[:,1] = (np.remainder(sow,1)*cls.FRAC_MULTIPLIER).astype(np.int64)
 
         return obj
 
     @classmethod
-    def fromBDSWeekSow(self,week,sow):
+    def fromBDSWeekSow(cls,week,sow):
         """ createthe object from a numpy array of MJDs
         Parameters
         ----------
@@ -300,14 +300,14 @@ class taiseconds:
         sow  : numpy array (nx) second of the week
 
         """
-        obj = self()
+        obj = cls()
         week = np.asarray(week)
         sow = np.asarray(sow)
         nep = week.size
 
         obj.tai_seconds = np.zeros((nep,2),np.int64)
-        obj.tai_seconds[:,0] = self.TAISEC_BDS0 + week.astype(np.int64)*86400*7 + np.floor(sow).astype(np.int64)
-        obj.tai_seconds[:,1] = (np.remainder(sow,1)*self.FRAC_MULTIPLIER).astype(np.int64)
+        obj.tai_seconds[:,0] = cls.TAISEC_BDS0 + week.astype(np.int64)*86400*7 + np.floor(sow).astype(np.int64)
+        obj.tai_seconds[:,1] = (np.remainder(sow,1)*cls.FRAC_MULTIPLIER).astype(np.int64)
 
         return obj
 

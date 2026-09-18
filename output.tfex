@@ -1,0 +1,31 @@
+# TFEXVER = '0.0.1'
+# REFPOINTS = [
+#   { id  = 'A', ts  = 'UTC(NICT)', dev  = 'NICT01', type  = 'TW' },
+#   { id  = 'B', ts  = 'UTC(PTB)', dev  = 'PTB05', type  = 'TW' },
+#   { id  = 'C', ts  = 'UTC(PTB)', dev  = 'PT13', type  = 'GNSS' },
+#   { id  = 'D', ts  = 'UTC(NICT)', dev  = 'NC5S', type  = 'GNSS' },
+#   { id  = 'E', ts  = 'UTC(NICT)', type  = 'REFPOINT' },
+#   { id  = 'A', ts  = 'UTC(NICT)', dev  = 'NICT01', type  = 'TW' },
+#   { id  = 'B', ts  = 'UTC(PTB)', dev  = 'PTB05', type  = 'TW' },
+#   { id  = 'C', ts  = 'UTC(PTB)', dev  = 'PT13', type  = 'GNSS' },
+#   { id  = 'D', ts  = 'UTC(NICT)', dev  = 'NC5S', type  = 'GNSS' },
+#   { id  = 'E', ts  = 'UTC(NICT)', type  = 'REFPOINT' },
+# ]
+# COLUMNS = [
+#   { timetag  = true, label  = 'MJD', scale  = 'TAI', unit  = 'si:day', format  = '5d' },
+#   { timetag  = true, label  = 'SoD', scale  = 'TAI', unit  = 'si:second', format  = '8.3f' },
+#   { label  = 'delta_t-delta_t', trip  = [ 'AB', 'CE', 'AB', 'CE' ], unit  = 'si:nanosecond', format  = '8.3f' },
+# ]
+# CONSTANT_DELAYS = [
+#   { trip  = [ 'ED' ], unit  = 'si:nanosecond', value  = 102.7, type  = 'TOTDLY' },
+#   { trip  = [ 'ED' ], unit  = 'si:nanosecond', value  = 102.7, type  = 'TOTDLY' },
+# ]
+# COMMENT = """
+# kfmldlskmfk s
+# 
+# kfmldlskmfk s
+# """
+60250    0.000    0.000 
+60250    5.000    0.000 
+60250   10.000    0.000 
+60250   15.000      nan 

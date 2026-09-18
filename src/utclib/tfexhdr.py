@@ -28,6 +28,28 @@ valid_keywords_and_types={
     'CONSTANT_DELAYS': list,
     'COMMENT': str}
 
+UNITS = {
+    'time': {
+        "si:femtosecond": {'symbol': 'fs',
+                        'factor': 1e-15},
+        "si:picosecond": {'symbol': 'ps',
+                        'factor': 1e-12},
+        "si:nanosecond": {'symbol': 'ns',
+                        'factor': 1e-9},
+        "si:microsecond": {'symbol': 'µs',
+                        'factor': 1e-6},
+        "si:millisecond": {'symbol': 'ms',
+                        'factor': 1e-3},
+        "si:second": {'symbol': 's',
+                    'factor': 1},
+        "si:minute": {'symbol': 'mn',
+                    'factor': 60},
+        "si:hour": {'symbol': 'h',
+                    'factor': 3600},
+        "si:day": {'symbol': 'd',
+                'factor': 86400},
+        }
+}
 class TfexHdrError(Exception):
     pass
 
@@ -102,7 +124,16 @@ class tfexhdr:
 def toml_repr(val):
     # Adjust representation of python types in TOML to keep inline dicts
     if isinstance(val, str):
-        return "'" + val + "'"
+        mystr = ''
+        if '\n' in val:
+            for il, line in enumerate(val.splitlines()):
+                if il==0:
+                    mystr += '"""' + '\n'
+                mystr += '# ' + line + '\n'
+            mystr += '# ' + '"""'
+        else:
+            mystr = "'" + val + "'"
+        return mystr
     elif isinstance(val, dict):
         out = "{"
         for key, v in val.items():

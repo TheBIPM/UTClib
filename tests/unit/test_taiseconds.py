@@ -59,3 +59,11 @@ class TestTaiSeconds:
         ts_new = taiseconds.taiseconds().fromMJDSoD(mjd_sod_withgaps[:,0], mjd_sod_withgaps[:,1])
         idx_old = ts_new.regularizeSampling(rate)
         assert(len(ts)==len(ts_new) and np.all(ts.tai_seconds[:,0]==ts_new.tai_seconds[:,0]) and np.all(ts.tai_seconds[:,1]==ts_new.tai_seconds[:,1]))
+
+    def test_intersect(self):
+        ts1 = taiseconds.taiseconds().fromMJDSoD(np.repeat(60000,12),np.arange(0,86400,7200))
+        ts2 = taiseconds.taiseconds().fromMJDSoD(np.repeat(60000,12),np.arange(1000,86400,7200))
+        tsi, i1, i2 = ts1.intersect(ts2)
+        assert(len(tsi)!=0)
+        
+

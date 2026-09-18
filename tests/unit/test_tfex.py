@@ -44,4 +44,12 @@ class TestOthers:
     def test_movmean(self):
         tf = tfex.tfex.from_file(p / 'test_data' / 'input_withgaps.tfex')
         tf_new = tf.movmean(col='delta_t',wind=30)
-        
+
+    def test_diff(self):
+        tf1 = tfex.tfex.from_file(p / 'test_data' / 'input.tfex')
+        tf2 = tfex.tfex.from_file(p / 'test_data' / 'input.tfex')
+        tf = tfex.tfex.diff(tf1, tf2)
+        assert(tf.hdr.COLUMNS[2]['label']=='delta_t-delta_t')
+        assert(np.all(tf.data[0:3,0]==np.array([0,0,0])))
+        assert(np.isnan(tf.data[-1,0]))
+        tf.write_to_file('output.tfex')
