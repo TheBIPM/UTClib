@@ -307,17 +307,17 @@ class tfex:
         MISSING_EPOCHS = getattr(self.hdr, 'MISSING_EPOCHS', None)
         if MISSING_EPOCHS:
             srate = getattr(self.hdr, 'SAMPLING_INTERVAL_s', None)
-            idx = self.timestamps.regularizeSampling(srate)
+            idx1, idx2 = self.timestamps.regularizeSampling(srate)
 
             old_data = self.data.copy()
             self.data = tabarray.empty(len(self.timestamps),old_data.dtype)
-            self.data[idx] = old_data
+            self.data[idx1] = old_data[idx2]
            
             setattr(self.hdr, 'MISSING_EPOCHS', False)
         else:
-            idx = []
+            idx1 = idx2 = []
 
-        return idx
+        return (idx1,idx2)
 
     def movmean(self, col: str, wind: float, inplace=False):
         """
