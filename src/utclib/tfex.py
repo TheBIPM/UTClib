@@ -354,7 +354,6 @@ class tfex:
         setattr(tf.hdr, 'AVERAGING_WINDOW_s', wind)
         return (None if inplace else tf)
 
-    #TODO
     @classmethod
     def diff(cls, tfex1: Self, tfex2: Self, col1: int|str = 0, col2: int|str = 0, align_on_right: bool = False, col_label=None):
         """
@@ -364,7 +363,8 @@ class tfex:
         - Timestamps of `tfex1` is used as reference  (`align_on_right`=False), otherwise use that of `tfex2` (`align_on_right`=True). Linear interpolation is used to match the data of the other tfex on the reference tfex.
         - `col_label` if not set will be f'{label1}-{label2}' as the output data column. 
         If both column has the `trip` metadata, then merge these metadata.
-        
+        If any tfex has a data column label that contains the word `flag` then those flags will be merged into the output. Expect integer flags e.g. [0,1].
+        #TODO implement other diff strategies.
         """
 
         # Retrieve the selected data column
@@ -411,6 +411,44 @@ class tfex:
         # Difference
         data = (data1*factor1 - data2*factor2)/factor_common
 
+        # Flags
+        flags = [None, None]
+        flag_out = None
+        flag_to_align = None
+        for i_tf, tf in enumerate([tfex1, tfex2]):
+            # search for possible flags
+            for i_col, i_col_dtypes in enumerate(tf.data_cols):
+                dtype_col = tf.dtypes[i_col_dtypes]
+                if 'flag' in dtype_col[0].lower():
+                    flags[i_tf] = tf.data[:,i_col]
+                    flags[i_tf] = np.where(flags[i_tf]!=np.iinfo(np.int32).max,flags[i_tf],0)
+                    break
+        if align_on_right:
+            # select left flag to align to the right
+            flag_to_align = flags[0]
+            flag_ref = flags[1]
+        else:
+            flag_ref = flags[0]
+            flag_to_align = flags[1]
+        if flag_to_align is not None:
+            # align flag and merge
+            idx_flags = np.where((flag_to_align>0) & (flag_to_align!=np.iinfo.max))[0]
+            ts_flags = xp
+            ts_ref   = x
+            flags_aligned = np.zeros(ts_ref.shape)
+            for i_f in idx_flags:
+                ts = ts_flags[i_f]
+                d_ts = ts_ref - ts
+                d_ts_ma = np.ma.masked_array(d_ts, mask=d_ts<0)
+                if d_ts_ma.count() > 0:
+                    i_min = d_ts_ma.argmin()
+                    flags_aligned[i_min] = flag_to_align[i_f]
+            if flag_ref is None:
+                flag_out = flags_aligned
+            else:
+                flag_out = np.logical_or(flags_aligned,flag_ref).astype(int)
+
+
         # Construct output tfex
         # get the data column metadata
         trip1 = data1_colspec.get('trip',[])
@@ -427,11 +465,16 @@ class tfex:
         mjd_sod = tfex2.timestamps.getIntMJDSOD() if align_on_right else tfex1.timestamps.getIntMJDSOD()
         # make the tfex object from timestamps and data array
         #TODO here the format of SoD should be matching the resolution of the reference tfex
-        tfex_out = tfex.from_arrays([
+        tfex_out_data = [
             (mjd_sod[0], dict(timetag=True, label='MJD', scale='TAI', unit = 'si:day', format='5d')),
             (mjd_sod[1], dict(timetag=True, label='SoD', scale='TAI', unit = 'si:second', format='8.3f')),
             (data, data_colspec)
-        ])
+        ]
+        if flag_out is not None:
+            tfex_out_data.append(
+                (flag_out, dict(label='flag', format='1d', possible_values=[0,1]))
+            )
+        tfex_out = tfex.from_arrays(tfex_out_data)
         # merge any comments
         comment1 = getattr(tfex1.hdr,'COMMENT', '')
         comment2 = getattr(tfex2.hdr,'COMMENT', '')
@@ -444,6 +487,7 @@ class tfex:
         else:
             comment = None
         # merge refpoints
+        #TODO assure unicity of REFPOINTS id and if not assign new id, match trip information in the data column used
         refpoints1 = getattr(tfex1.hdr,'REFPOINTS',[])
         refpoints2 = getattr(tfex2.hdr,'REFPOINTS',[])
         if refpoints1 or refpoints2:
