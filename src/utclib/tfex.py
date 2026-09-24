@@ -447,7 +447,9 @@ class tfex:
                 flag_out = flags_aligned
             else:
                 flag_out = np.logical_or(flags_aligned,flag_ref).astype(int)
-
+        else:
+            if flag_ref is not None:
+                flag_out = flag_ref
 
         # Construct output tfex
         # get the data column metadata
