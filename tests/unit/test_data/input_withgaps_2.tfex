@@ -1,0 +1,43 @@
+# TFEXVER= 0.2
+# MJDSTART= 60250 
+# MJDSTOP= 60310 
+# NDATA = 1511 
+# PREFIX = {si = 'https://si-digital-framework.org/SI/units/'} 
+# SAMPLING_INTERVAL_s = 5 
+# AVERAGING_WINDOW_s = 120 
+# MISSING_EPOCHS = true 
+# AUTHOR = "BIPM"
+# DATE = "2024-03-18T16:32:00.432Z"
+# REFPOINTS = [
+#   {id = 'A', ts = "UTC(NICT)", dev = "NICT01", type = "TW"},
+#   {id = 'B', ts = "UTC(PTB)",  dev = "PTB05",  type = "TW"},
+#   {id = 'C', ts = "UTC(PTB)",  dev = "PT13",   type = "GPSAV"},
+#   {id = 'D', ts = "UTC(NICT)", dev = "NC5S",   type = "GPSAV"},
+#   {id = 'E', ts =  "UTC(NICT)", type ="REFPOINT"}
+# ]
+# COLUMNS = [
+# {timetag = true, label = "MJD", scale="gpstime", unit = "si:day", format = "5d"},
+# {timetag = true, label = "SoD", scale="gpstime", unit = "si:second", format = "8.3f"},
+# {label = "delta_t", trip = ['AB', 'CE'], unit = "si:nanosecond",format = "8.3f"},
+# {label = "flag", trip = ['AB', 'CE'], format = "1d", possible_values=[0,1,2]},
+# ]
+# CONSTANT_DELAYS = [
+#  {trip = ['ED'], unit = "si:nanosecond", value = 102.7, type = "TOTDLY"}
+# ]
+# 
+# COMMENT = """
+# kfmldlskmfk s
+# """
+
+60250 0000.000 -123.123 0
+60250    5.000 -124.271 0
+60250   10.000 -122.531 0
+60250   15.000 -120.198 0
+60250   20.000 -119.436 0
+60250   25.000 -110.986 1
+60250   30.000 -112.271 0
+#       35.000              missing epoch here
+#       40.000              missing epoch here
+60250   45.000 -109.123 0
+#       50.000              missing epoch here
+60250   55.000 -111.910 0

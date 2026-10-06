@@ -53,3 +53,15 @@ class TestOthers:
         assert(np.all(tf.data[0:3,0]==np.array([0,0,0])))
         assert(np.isnan(tf.data[-1,0]))
         tf.write_to_file('output.tfex')
+
+    def test_diff_with_flags(self):
+        tf1 = tfex.tfex.from_file(p / 'test_data' / 'input_withgaps.tfex')
+        tf2 = tfex.tfex.from_file(p / 'test_data' / 'input_withgaps_2.tfex')
+        tf = tfex.tfex.diff(tf1, tf2, align_on_right=False)
+        print(tf)
+        tf = tfex.tfex.diff(tf1, tf2, align_on_right=True)
+        print(tf)
+        # assert(tf.hdr.COLUMNS[2]['label']=='delta_t-delta_t')
+        # assert(np.all(tf.data[0:3,0]==np.array([0,0,0])))
+        # assert(np.isnan(tf.data[-1,0]))
+        # tf.write_to_file('output.tfex')
