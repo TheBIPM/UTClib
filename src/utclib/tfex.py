@@ -354,6 +354,53 @@ class tfex:
         setattr(tf.hdr, 'AVERAGING_WINDOW_s', wind)
         return (None if inplace else tf)
 
+
+    def detect_outliers(self, col: str|int, window: int, F: float = 3.0, min_pct: float = 0.5) -> np.ndarray[bool]|None:
+        """
+        Flags outliers using a rolling MAD. A point is an outlier if it exceeds 
+        the threshold in a minimum percentage of the rolling windows it participates in.
+        
+        :param col: tfex column to analyze (label or integer index)
+        :param window: Rolling window size (sample).
+        :param F: MAD multiplier threshold (e.g., 3.0).
+        :param min_pct: Minimum percentage of passing windows (0.0 to 1.0) to flag True.
+        """
+        data, i = self.getDataCol(col)
+        
+        n = len(data)
+        
+        if n < window:
+            return None
+            
+        # 1. Create a 2D array of all rolling windows. Shape: (n - window + 1, window)
+        windows = np.lib.stride_tricks.sliding_window_view(data, window_shape=window)
+        
+        # 2. Calculate Median and MAD for each window across the rows
+        medians = np.nanmedian(windows, axis=1, keepdims=True)
+        
+        # Standard MAD formula. Note: Multiply by 1.4826 if you want Normal Distribution equivalence
+        mads = np.nanmedian(np.abs(windows - medians), axis=1, keepdims=True)
+        
+        # 3. Create a 2D boolean mask of outliers for every element in every window
+        outliers_2d = np.abs(windows - medians) > (F * 1.4826 * mads)
+        
+        # 4. Tally how many times each data point was flagged across its overlapping windows
+        outlier_counts = np.zeros(n, dtype=int)
+        window_counts = np.zeros(n, dtype=int)
+        
+        num_windows = len(outliers_2d)
+        
+        # Map the 2D boolean array back to the 1D original indices
+        for k in range(window):
+            outlier_counts[k : k + num_windows] += outliers_2d[:, k]
+            window_counts[k : k + num_windows] += 1
+            
+        # 5. Calculate percentage and apply final threshold
+        outlier_pct = outlier_counts / window_counts
+        final_outliers = outlier_pct >= min_pct
+        
+        return final_outliers
+    
     @classmethod
     def diff(cls, tfex1: Self, tfex2: Self, col1: int|str = 0, col2: int|str = 0, align_on_right: bool = False, col_label=None):
         """
