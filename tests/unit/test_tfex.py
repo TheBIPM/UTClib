@@ -52,6 +52,7 @@ class TestOthers:
         assert(tf.hdr.COLUMNS[2]['label']=='delta_t-delta_t')
         assert(np.all(tf.data[0:3,0]==np.array([0,0,0])))
         assert(np.isnan(tf.data[-1,0]))
+        assert(tf.hdr.SAMPLING_INTERVAL_s==7200)
         tf.write_to_file('output.tfex')
 
     def test_diff_with_flags(self):

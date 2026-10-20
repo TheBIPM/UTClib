@@ -530,6 +530,11 @@ class tfex:
             constantdelays = constantdelays1 + constantdelays2
         else:
             constantdelays = None
+        # get sampling time
+        if align_on_right:
+            sampling_time = getattr(tfex2.hdr,'SAMPLING_INTERVAL_s',None)
+        else:
+            sampling_time = getattr(tfex1.hdr,'SAMPLING_INTERVAL_s',None)
         # set extra metadata
         if comment:
             setattr(tfex_out.hdr, 'COMMENT', comment)
@@ -537,13 +542,29 @@ class tfex:
             setattr(tfex_out.hdr, 'REFPOINTS', refpoints)
         if constantdelays:
             setattr(tfex_out.hdr, 'CONSTANT_DELAYS', constantdelays)
+        if sampling_time:
+            setattr(tfex_out.hdr, 'SAMPLING_INTERVAL_s', sampling_time)
+        
 
         return tfex_out
 
-    def adev(self, col: str|int = 0, **kwargs):
-        """Wrapper on allantools.gradev for the data column `col` (column name or integer index).
-        `kwargs`: other keywords argument to allantools.gradev other than `data` and `rate`, e.g. taus=...
-        """
+    def adev(self, col: str|int = 0, outliers=None, **kwargs):
+        """Calculate the Allan Deviation (ADEV).
+
+            Uses ``allantools.gradev`` on the specified column. Can optionally filter out 
+            outliers prior to calculation.
+
+            :param col: Target column name (str) or index (int) to compute ADEV on, defaults to 0.
+            :type col: str or int, optional
+            :param outliers: Outlier processing configuration, defaults to None:
+                - If ``dict``: Passed as keyword arguments to ``self.detect_outliers(col, **outliers)``.
+                - If ``str``: Name of the boolean attribute on ``self`` containing pre-computed outlier flags.
+                - If ``None``: No outlier filtering is applied.
+            :type outliers: dict, str, or None, optional
+            :param kwargs: Additional keyword arguments forwarded directly to ``allantools.gradev``.
+            :return: Results tuple containing ``(taus, adevs, errors, ns)`` as returned by ``allantools.gradev``.
+            :rtype: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+            """
         # check sampling rate
         srate = getattr(self.hdr,'SAMPLING_INTERVAL_s', None)
         if not srate:
@@ -563,7 +584,19 @@ class tfex:
         self.regularize()
         # extract requested data
         data,_ = self.getDataCol(col)
-        return allantools.gradev(data=data*factor, rate=1/srate, **kwargs)
+        if isinstance(outliers, dict):
+            outlier_flags = self.detect_outliers(col, **outliers)
+        elif isinstance(outliers, str):
+            try:
+                outlier_flags = getattr(self, outliers)
+            except:
+                warn(f'Outlier field {outliers} not found in tfex object.')
+                outlier_flags = np.full(data.shape, False)
+        else:
+            outlier_flags = np.full(data.shape, False)
+        data_clean = data.copy()
+        data_clean[outlier_flags] = np.nan
+        return allantools.gradev(data=data_clean*factor, rate=1/srate, **kwargs)
 
     def mdev(self, col: str|int = 0, **kwargs):
         """Wrapper on allantools.mdev for the data column `col` (column name or integer index).
